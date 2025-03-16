@@ -1,0 +1,2449 @@
+
+=== File: C:\PersonalProjects\TimeWait\frontend\README.md ===
+# Getting Started with Create React App
+
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+## Available Scripts
+
+In the project directory, you can run:
+
+### `npm start`
+
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
+
+### `npm test`
+
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+
+### `npm run build`
+
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
+
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
+
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+### `npm run eject`
+
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+
+## Learn More
+
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+To learn React, check out the [React documentation](https://reactjs.org/).
+
+### Code Splitting
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+
+### Analyzing the Bundle Size
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+
+### Making a Progressive Web App
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+
+### Advanced Configuration
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+
+### Deployment
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+
+### `npm run build` fails to minify
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\public\robots.txt ===
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow:
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\App.js ===
+// src/App.js
+
+import React, { useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { AuthContext } from './contexts/AuthContext'; // Import AuthContext
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
+import ServiceList from './components/Services/ServiceList';
+import CreateService from './components/Services/CreateService';
+import UpdateService from './components/Services/UpdateService';
+import CreateQueue from './components/Queues/CreateQueue';
+import UpdateQueue from './components/Queues/UpdateQueue';
+import MainPage from './components/MainPage';
+import PrivateRoute from './components/PrivateRoute';
+import CreateOrganization from './components/Organizations/CreateOrganization';
+import OrganizationDetail from './components/Organizations/OrganizationDetail';
+import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import QueuesList from "./components/Queues/QueuesList";
+import OrganizationsList from "./components/Organizations/OrganizationsList";
+import DashboardPage from "./components/DashboardPage";
+import QueueDetailWrapper from './components/Queues/QueueDetailWrapper'; // NEW: Import QueueDetailWrapper
+
+const App = () => {
+    const { authToken, logoutUser, user } = useContext(AuthContext); // Access AuthContext
+
+    return (
+        <Router>
+            <AppBar position="static">
+                <Toolbar>
+                    <Typography
+                        variant="h6"
+                        component={Link}
+                        to="/"
+                        sx={{
+                            flexGrow: 1,
+                            textDecoration: 'none',
+                            color: 'inherit',
+                            '&:hover': { color: 'inherit' },
+                        }}
+                    >
+                        TimeWait
+                    </Typography>
+                    {authToken ? (
+                        <Box>
+                            <Button color="inherit" component={Link} to="/services">
+                                Services
+                            </Button>
+                            <Button color="inherit" component={Link} to="/queues">
+                                Queues
+                            </Button>
+                            <Button color="inherit" component={Link} to="/organizations">
+                                Organizations
+                            </Button>
+                            {/* Add more buttons if needed */}
+                            <Button color="inherit" onClick={logoutUser}>
+                                Logout
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Box>
+                            <Button color="inherit" component={Link} to="/login">
+                                Login
+                            </Button>
+                            <Button color="inherit" component={Link} to="/register">
+                                Register
+                            </Button>
+                        </Box>
+                    )}
+                </Toolbar>
+            </AppBar>
+            <Routes>
+                <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+
+                {/* NEW: Queue Detail Route */}
+                <Route path="/queues/:queueId" element={<PrivateRoute><QueueDetailWrapper /></PrivateRoute>} />
+
+                {/* Services Routes */}
+                <Route path="/services" element={<PrivateRoute><ServiceList /></PrivateRoute>} />
+                <Route path="/services/create" element={<PrivateRoute><CreateService /></PrivateRoute>} />
+                <Route path="/services/update/:serviceId" element={<PrivateRoute><UpdateService /></PrivateRoute>} />
+
+                {/* Queues Routes */}
+                <Route path="/queues" element={<PrivateRoute><QueuesList /></PrivateRoute>} />
+                <Route path="/queues/create" element={<PrivateRoute><CreateQueue /></PrivateRoute>} />
+                <Route path="/queues/update/:queueId" element={<PrivateRoute><UpdateQueue /></PrivateRoute>} />
+
+                {/* Organizations Routes */}
+                <Route path="/organizations" element={<PrivateRoute><OrganizationsList/></PrivateRoute>} />
+                <Route path="/organizations/create" element={<PrivateRoute><CreateOrganization /></PrivateRoute>} />
+                <Route path="/organizations/:organizationId" element={<PrivateRoute><OrganizationDetail /></PrivateRoute>} />
+
+                {/* Catch-All Route */}
+                <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+        </Router>
+    );
+};
+
+export default App;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\index.js ===
+// src/index.js
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+import { ThemeProvider } from '@mui/material/styles';
+import { AuthProvider } from './contexts/AuthContext';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
+
+ReactDOM.render(
+    <React.StrictMode>
+        <AuthProvider>
+            <ThemeProvider theme={theme}>
+                <CssBaseline /> {/* Resets CSS to a consistent baseline */}
+                <App />
+            </ThemeProvider>
+        </AuthProvider>
+    </React.StrictMode>,
+    document.getElementById('root')
+);
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\theme.js ===
+// src/theme.js
+
+import { createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: '#1976d2', // Customize your primary color
+        },
+        secondary: {
+            main: '#dc004e', // Customize your secondary color
+        },
+    },
+    typography: {
+        // Customize typography if needed
+        fontFamily: 'Roboto, sans-serif',
+    },
+    components: {
+        // Customize component styles if needed
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: '8px',
+                },
+            },
+        },
+    },
+});
+
+export default theme;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\DashboardPage.js ===
+import React, {useState, useEffect, useContext} from 'react';
+import {Container, Grid, Typography, Box, Card, CardContent, Alert} from '@mui/material';
+import {AuthContext} from '../contexts/AuthContext';
+import axios from '../utils/axios';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
+
+const DashboardPage = () => {
+    const {authToken} = useContext(AuthContext);
+    const [orgCount, setOrgCount] = useState(0);
+    const [queueCount, setQueueCount] = useState(0);
+    const [serviceCount, setServiceCount] = useState(0);
+    const [statsError, setStatsError] = useState('');
+
+    // Example chart data
+    const [chartData, setChartData] = useState([
+        {day: 'Mon', queues: 5},
+        {day: 'Tue', queues: 9},
+        {day: 'Wed', queues: 3},
+        {day: 'Thu', queues: 7},
+        {day: 'Fri', queues: 11},
+    ]);
+
+    useEffect(() => {
+        // Example: fetch total organizations
+        const fetchOrganizations = async () => {
+            try {
+                const res = await axios.get('/organizations', {
+                    headers: {Authorization: `Bearer ${authToken}`},
+                });
+                setOrgCount(res.data.length);
+            } catch (err) {
+                setStatsError('Failed to fetch organizations count');
+            }
+        };
+
+        // Example: fetch total queues
+        const fetchQueues = async () => {
+            try {
+                const res = await axios.get('/queues', {
+                    headers: {Authorization: `Bearer ${authToken}`},
+                });
+                setQueueCount(res.data.length);
+            } catch (err) {
+                setStatsError('Failed to fetch queues count');
+            }
+        };
+
+        // Example: fetch total services
+        const fetchServices = async () => {
+            try {
+                const res = await axios.get('/services/all', {
+                    headers: {Authorization: `Bearer ${authToken}`},
+                });
+                setServiceCount(res.data.length);
+            } catch (err) {
+                setStatsError('Failed to fetch services count');
+            }
+        };
+
+        fetchOrganizations();
+        fetchQueues();
+        fetchServices();
+    }, [authToken]);
+
+    return (
+        <Container maxWidth="lg" sx={{mt: 4}}>
+            <Typography variant="h4" gutterBottom>
+                Dashboard
+            </Typography>
+
+            {statsError && <Alert severity="error">{statsError}</Alert>}
+
+            {/* Stats Cards Row */}
+            <Grid container spacing={3} sx={{mb: 4}}>
+                {/* Organizations Card */}
+                <Grid item xs={12} md={4}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6">Organizations</Typography>
+                            <Typography variant="h3">{orgCount}</Typography>
+                            <Typography color="text.secondary">
+                                Total organizations in the system
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Queues Card */}
+                <Grid item xs={12} md={4}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6">Queues</Typography>
+                            <Typography variant="h3">{queueCount}</Typography>
+                            <Typography color="text.secondary">
+                                Total queues in the system
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Services Card */}
+                <Grid item xs={12} md={4}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h6">Services</Typography>
+                            <Typography variant="h3">{serviceCount}</Typography>
+                            <Typography color="text.secondary">
+                                Total services in the system
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
+
+            {/* Example Chart Section */}
+            <Typography variant="h5" gutterBottom>
+                Weekly Queue Volume (Example)
+            </Typography>
+            <Box sx={{width: '100%', height: 300}}>
+                <ResponsiveContainer>
+                    <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3"/>
+                        <XAxis dataKey="day"/>
+                        <YAxis/>
+                        <Tooltip/>
+                        <Bar dataKey="queues" fill="#1976d2"/>
+                    </BarChart>
+                </ResponsiveContainer>
+            </Box>
+            <Grid container spacing={4} sx={{mt: 4}}>
+                <Grid item xs={12} md={6}>
+                    {/* Organizations list or summary */}
+                    <Typography variant="h6" gutterBottom>Organizations</Typography>
+                    {/* Insert your <OrganizationsList ... /> or a smaller summary here */}
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    {/* Queues list or summary */}
+                    <Typography variant="h6" gutterBottom>Queues</Typography>
+                    {/* Insert your <QueuesList ... /> or a smaller summary here */}
+                </Grid>
+            </Grid>
+        </Container>
+    );
+};
+
+export default DashboardPage;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\MainPage.js ===
+// src/components/MainPage.js
+
+import React, { useState, useEffect, useContext } from 'react';
+import { Container, Grid, Typography, Box, TextField, Alert, Button } from '@mui/material';
+import OrganizationsList from './Organizations/OrganizationsList';
+import QueuesList from './Queues/QueuesList';
+import axios from '../utils/axios';
+import { AuthContext } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
+
+const MainPage = () => {
+    const { authToken, user } = useContext(AuthContext);
+    const [organizations, setOrganizations] = useState([]);
+    const [queues, setQueues] = useState([]);
+    const [orgSearch, setOrgSearch] = useState('');
+    const [queueSearch, setQueueSearch] = useState('');
+    const [filteredOrgs, setFilteredOrgs] = useState([]);
+    const [filteredQueues, setFilteredQueues] = useState([]);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchOrganizations = async () => {
+            try {
+                const response = await axios.get('/organizations/', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setOrganizations(response.data);
+            } catch (err) {
+                console.error('Error fetching organizations:', err);
+                setError('Failed to fetch organizations');
+            }
+        };
+
+        const fetchQueues = async () => {
+            try {
+                const response = await axios.get('/queues/', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setQueues(response.data);
+            } catch (err) {
+                console.error('Error fetching queues:', err);
+                setError('Failed to fetch queues');
+            }
+        };
+
+        fetchOrganizations();
+        fetchQueues();
+    }, [authToken]);
+
+    // Handle search for organizations
+    useEffect(() => {
+        const results = organizations.filter(org =>
+            org.name.toLowerCase().includes(orgSearch.toLowerCase())
+        );
+        setFilteredOrgs(results);
+    }, [orgSearch, organizations]);
+
+    // Handle search for queues
+    useEffect(() => {
+        const results = queues.filter(queue =>
+            queue.name.toLowerCase().includes(queueSearch.toLowerCase())
+        );
+        setFilteredQueues(results);
+    }, [queueSearch, queues]);
+
+    // Determine if the user can create organizations
+    const canCreateOrganization = ['ADMIN', 'BUSINESS_OWNER'].includes(user?.role);
+
+    return (
+        <Container maxWidth="lg" sx={{ mt: 4 }}>
+            <Grid container spacing={4}>
+                {/* Organizations Section */}
+                <Grid item xs={12} md={6}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h5" gutterBottom>
+                            Organizations
+                        </Typography>
+                    </Box>
+                    <Box mb={2}>
+                        <TextField
+                            label="Search Organizations"
+                            variant="outlined"
+                            fullWidth
+                            value={orgSearch}
+                            onChange={(e) => setOrgSearch(e.target.value)}
+                        />
+                    </Box>
+                    <OrganizationsList organizations={filteredOrgs} />
+                </Grid>
+
+                {/* Queues Section */}
+                <Grid item xs={12} md={6}>
+                    <Typography variant="h5" gutterBottom>
+                        Queues
+                    </Typography>
+                    <Box mb={2}>
+                        <TextField
+                            label="Search Queues"
+                            variant="outlined"
+                            fullWidth
+                            value={queueSearch}
+                            onChange={(e) => setQueueSearch(e.target.value)}
+                        />
+                    </Box>
+                    <QueuesList queues={filteredQueues} />
+                </Grid>
+            </Grid>
+            {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+        </Container>
+    );
+};
+
+export default MainPage;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\PrivateRoute.js ===
+// src/components/PrivateRoute.js
+
+import React, { useContext } from 'react';
+import { Navigate } from 'react-router-dom';
+import { AuthContext } from '../contexts/AuthContext';
+
+const PrivateRoute = ({ children }) => {
+    const { authToken } = useContext(AuthContext);
+    return authToken ? children : <Navigate to="/login" />;
+};
+
+export default PrivateRoute;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Auth\Login.js ===
+// src/components/Auth/Login.js
+
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import { TextField, Button, Container, Typography, Box, Alert } from '@mui/material';
+
+const Login = () => {
+    const { loginUser } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        const result = await loginUser(email, password);
+        if (result.success) {
+            navigate('/services');
+        } else {
+            setError(result.message);
+        }
+    };
+
+    return (
+        <Container maxWidth="sm">
+            <Box mt={5}>
+                <Typography variant="h4" component="h1" gutterBottom>
+                    Login
+                </Typography>
+                {error && <Alert severity="error">{error}</Alert>}
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        label="Email"
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <TextField
+                        label="Password"
+                        variant="outlined"
+                        margin="normal"
+                        type="password"
+                        required
+                        fullWidth
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                        Login
+                    </Button>
+                </form>
+                <Typography variant="body2" align="center" mt={2}>
+                    Don't have an account? <Link to="/register">Register</Link>
+                </Typography>
+            </Box>
+        </Container>
+    );
+};
+
+export default Login;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Auth\Register.js ===
+// src/components/Auth/Register.js
+
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import { TextField, Button, Container, Typography, Box, Alert } from '@mui/material';
+
+const Register = () => {
+    const { registerUser } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [phone_number, setPhoneNumber] = useState('');
+
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        const result = await registerUser(name, email, password, phone_number);
+        if (result.success) {
+            navigate('/services');
+        } else {
+            setError(result.message);
+        }
+    };
+
+    return (
+        <Container maxWidth="sm">
+            <Box mt={5}>
+                <Typography variant="h4" component="h1" gutterBottom>
+                    Register
+                </Typography>
+                {error && <Alert severity="error">{error}</Alert>}
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        label="Name"
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                    <TextField
+                        label="Email"
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <TextField
+                        label="Password"
+                        variant="outlined"
+                        margin="normal"
+                        type="password"
+                        required
+                        fullWidth
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <TextField
+                        label="Phone Number"
+                        variant="outlined"
+                        margin="normal"
+                        fullWidth
+                        value={phone_number}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                    <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                        Register
+                    </Button>
+                </form>
+                <Typography variant="body2" align="center" mt={2}>
+                    Already have an account? <Link to="/login">Login</Link>
+                </Typography>
+            </Box>
+        </Container>
+    );
+};
+
+export default Register;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Memberships\AddMember.js ===
+// src/components/Memberships/AddMember.js
+
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, InputLabel, FormControl, Alert } from '@mui/material';
+
+const AddMember = ({ organizationId, refreshOrganization }) => {
+    const { authToken } = useContext(AuthContext);
+    const [open, setOpen] = useState(false);
+    const [userId, setUserId] = useState('');
+    const [role, setRole] = useState('USER');
+    const [error, setError] = useState('');
+
+    const handleAdd = async () => {
+        setError('');
+        try {
+            await axios.post(`/organizations/${organizationId}/memberships/`, {
+                user_id: parseInt(userId),
+                role,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+            setOpen(false);
+            setUserId('');
+            setRole('USER');
+            refreshOrganization();
+        } catch (err) {
+            console.error('Error adding member:', err);
+            setError(err.response?.data.detail || 'Failed to add member');
+        }
+    };
+
+    return (
+        <>
+            <Button variant="outlined" color="primary" onClick={() => setOpen(true)} sx={{ mb: 2 }}>
+                Add Member
+            </Button>
+            <Dialog open={open} onClose={() => setOpen(false)}>
+                <DialogTitle>Add New Member</DialogTitle>
+                <DialogContent>
+                    {error && <Alert severity="error">{error}</Alert>}
+                    <TextField
+                        label="User ID"
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        value={userId}
+                        onChange={(e) => setUserId(e.target.value)}
+                        type="number"
+                    />
+                    <FormControl variant="outlined" margin="normal" fullWidth>
+                        <InputLabel id="role-label">Role</InputLabel>
+                        <Select
+                            labelId="role-label"
+                            label="Role"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                        >
+                            <MenuItem value="ADMIN">Admin</MenuItem>
+                            <MenuItem value="BUSINESS_OWNER">Business Owner</MenuItem>
+                            <MenuItem value="USER">User</MenuItem>
+                        </Select>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAdd} variant="contained" color="primary">Add</Button>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
+};
+
+export default AddMember;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Memberships\MembershipsList.js ===
+// src/components/Memberships/MembershipsList.js
+
+import React, { useContext, useState } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { List, ListItem, ListItemText, IconButton, Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import { Edit, Delete } from '@mui/icons-material';
+import UpdateMember from './UpdateMember';
+
+const MembershipsList = ({ memberships, organizationId, isAdmin }) => {
+    const { authToken } = useContext(AuthContext);
+    const [error, setError] = useState('');
+    const [openDelete, setOpenDelete] = useState(false);
+    const [memberToDelete, setMemberToDelete] = useState(null);
+    const [openUpdate, setOpenUpdate] = useState(false);
+    const [memberToUpdate, setMemberToUpdate] = useState(null);
+
+    const handleDelete = async () => {
+        try {
+            await axios.delete(`/organizations/${organizationId}/memberships/${memberToDelete.user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+            setMemberToDelete(null);
+            setOpenDelete(false);
+            // Optionally, refresh the organization data
+        } catch (err) {
+            console.error('Error deleting member:', err);
+            setError(err.response?.data.detail || 'Failed to delete member');
+        }
+    };
+
+    return (
+        <>
+            {error && <Alert severity="error">{error}</Alert>}
+            <List>
+                {memberships.map(membership => (
+                    <ListItem key={membership.id} divider>
+                        <ListItemText
+                            primary={membership.user.name}
+                            secondary={`Role: ${membership.role}`}
+                        />
+                        <Chip label={membership.role} color={
+                            membership.role === 'ADMIN' ? 'primary' :
+                            membership.role === 'BUSINESS_OWNER' ? 'secondary' :
+                            'default'
+                        } />
+                        {isAdmin && (
+                            <>
+                                <IconButton onClick={() => { setMemberToUpdate(membership); setOpenUpdate(true); }} color="primary">
+                                    <Edit />
+                                </IconButton>
+                                <IconButton onClick={() => { setMemberToDelete(membership); setOpenDelete(true); }} color="error">
+                                    <Delete />
+                                </IconButton>
+                            </>
+                        )}
+                    </ListItem>
+                ))}
+                {memberships.length === 0 && (
+                    <ListItem>
+                        <ListItemText primary="No members found." />
+                    </ListItem>
+                )}
+            </List>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={openDelete}
+                onClose={() => setOpenDelete(false)}
+            >
+                <DialogTitle>Confirm Deletion</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to remove {memberToDelete?.user.name} from the organization?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDelete(false)}>Cancel</Button>
+                    <Button onClick={handleDelete} color="error">Delete</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Update Member Dialog */}
+            {memberToUpdate && (
+                <UpdateMember
+                    open={openUpdate}
+                    handleClose={() => setOpenUpdate(false)}
+                    membership={memberToUpdate}
+                    organizationId={organizationId}
+                />
+            )}
+        </>
+    );
+};
+
+export default MembershipsList;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Memberships\UpdateMember.js ===
+// src/components/Memberships/UpdateMember.js
+
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, FormControl, InputLabel, Select, MenuItem, Alert } from '@mui/material';
+
+const UpdateMember = ({ open, handleClose, membership, organizationId }) => {
+    const { authToken } = useContext(AuthContext);
+    const [role, setRole] = useState(membership.role);
+    const [error, setError] = useState('');
+
+    const handleUpdate = async () => {
+        setError('');
+        try {
+            await axios.put(`/organizations/${organizationId}/memberships/${membership.user_id}`, {
+                role,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+            handleClose();
+            // Optionally, refresh the organization data
+        } catch (err) {
+            console.error('Error updating member:', err);
+            setError(err.response?.data.detail || 'Failed to update member');
+        }
+    };
+
+    return (
+        <Dialog open={open} onClose={handleClose}>
+            <DialogTitle>Update Member Role</DialogTitle>
+            <DialogContent>
+                {error && <Alert severity="error">{error}</Alert>}
+                <FormControl variant="outlined" margin="normal" fullWidth>
+                    <InputLabel id="update-role-label">Role</InputLabel>
+                    <Select
+                        labelId="update-role-label"
+                        label="Role"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                    >
+                        <MenuItem value="ADMIN">Admin</MenuItem>
+                        <MenuItem value="BUSINESS_OWNER">Business Owner</MenuItem>
+                        <MenuItem value="USER">User</MenuItem>
+                    </Select>
+                </FormControl>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleClose}>Cancel</Button>
+                <Button onClick={handleUpdate} variant="contained" color="primary">Update</Button>
+            </DialogActions>
+        </Dialog>
+    );
+};
+
+export default UpdateMember;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Organizations\CreateOrganization.js ===
+// src/components/Organizations/CreateOrganization.js
+
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { useNavigate } from 'react-router-dom';
+import {
+    Container,
+    Typography,
+    Box,
+    TextField,
+    Button,
+    Alert,
+    CircularProgress,
+} from '@mui/material';
+
+const CreateOrganization = () => {
+    const { authToken } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        // Basic validation
+        if (!name.trim()) {
+            setError('Organization name is required.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await axios.post(
+                '/organizations/',
+                {
+                    name: name.trim(),
+                    description: description.trim(),
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            setSuccess('Organization created successfully!');
+            // Optionally, redirect to the organization's detail page
+            navigate(`/organizations/${response.data.id}`);
+        } catch (err) {
+            console.error('Error creating organization:', err);
+            setError(
+                err.response?.data?.detail ||
+                    'Failed to create organization. Please try again.'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Container maxWidth="sm">
+            <Box mt={5} mb={3}>
+                <Typography variant="h4" gutterBottom>
+                    Create Organization
+                </Typography>
+                {success && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        {success}
+                    </Alert>
+                )}
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        label="Organization Name"
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        disabled={loading}
+                    />
+                    <TextField
+                        label="Description"
+                        variant="outlined"
+                        margin="normal"
+                        multiline
+                        rows={4}
+                        fullWidth
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        disabled={loading}
+                    />
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        sx={{ mt: 2 }}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <CircularProgress size={24} color="inherit" />
+                        ) : (
+                            'Create'
+                        )}
+                    </Button>
+                </form>
+            </Box>
+        </Container>
+    );
+};
+
+export default CreateOrganization;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Organizations\OrganizationDetail.js ===
+// src/components/Organizations/OrganizationDetail.js
+
+import React, { useEffect, useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { useParams, Link } from 'react-router-dom';
+import { Container, Typography, Box, Paper, List, ListItem, ListItemText, Button, Alert } from '@mui/material';
+import MembershipsList from '../Memberships/MembershipsList';
+import AddMember from '../Memberships/AddMember';
+
+const OrganizationDetail = () => {
+    const { authToken, user } = useContext(AuthContext);
+    const { organizationId } = useParams();
+
+    const [organization, setOrganization] = useState(null);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchOrganization = async () => {
+            try {
+                const response = await axios.get(`/organizations/${organizationId}`, {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setOrganization(response.data);
+            } catch (err) {
+                console.error('Error fetching organization:', err);
+                setError(err.response?.data.detail || 'Failed to fetch organization');
+            }
+        };
+
+        fetchOrganization();
+    }, [organizationId, authToken]);
+
+    if (error) {
+        return (
+            <Container maxWidth="md">
+                <Box mt={5}>
+                    <Alert severity="error">{error}</Alert>
+                </Box>
+            </Container>
+        );
+    }
+
+    if (!organization) {
+        return (
+            <Container maxWidth="md">
+                <Box mt={5}>
+                    <Typography>Loading...</Typography>
+                </Box>
+            </Container>
+        );
+    }
+
+    // Determine if the current user has ADMIN or BUSINESS_OWNER role
+    const currentMembership = organization.memberships.find(m => m.user_id === user?.sub);
+    const isAdmin = currentMembership && currentMembership.role === 'ADMIN';
+    const isBusinessOwner = currentMembership && currentMembership.role === 'BUSINESS_OWNER';
+
+    return (
+        <Container maxWidth="md">
+            <Box mt={5} mb={3}>
+                <Typography variant="h4" gutterBottom>
+                    {organization.name}
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                    {organization.description}
+                </Typography>
+                {(isAdmin || isBusinessOwner) && (
+                    <Button variant="contained" color="primary" component={Link} to={`/organizations/${organizationId}/services/create`}>
+                        Add Service
+                    </Button>
+                )}
+            </Box>
+
+            <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                    Members
+                </Typography>
+                {(isAdmin) && <AddMember organizationId={organizationId} refreshOrganization={() => {
+                    // Re-fetch organization data to update memberships
+                    axios.get(`/organizations/${organizationId}`, {
+                        headers: {
+                            Authorization: `Bearer ${authToken}`,
+                        },
+                    }).then(response => setOrganization(response.data)).catch(err => console.error(err));
+                }} />}
+                <MembershipsList memberships={organization.memberships} organizationId={organizationId} isAdmin={isAdmin} />
+            </Paper>
+
+            <Paper elevation={3} sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                    Services
+                </Typography>
+                <List>
+                    {organization.services.map(service => (
+                        <ListItem key={service.id} divider button component={Link} to={`/services/${service.id}`}>
+                            <ListItemText
+                                primary={service.name}
+                                secondary={service.description}
+                            />
+                        </ListItem>
+                    ))}
+                    {organization.services.length === 0 && (
+                        <ListItem>
+                            <ListItemText primary="No services found." />
+                        </ListItem>
+                    )}
+                </List>
+            </Paper>
+        </Container>
+    );
+};
+
+export default OrganizationDetail;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Organizations\OrganizationsList.js ===
+// src/components/Organizations/OrganizationsList.js
+
+import React, { useEffect, useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { List, ListItem, ListItemText, Paper, Button, Typography, Box, Alert } from '@mui/material';
+import { Link } from 'react-router-dom';
+
+const OrganizationsList = () => {
+    const { authToken, user } = useContext(AuthContext);
+    const [organizations, setOrganizations] = useState([]);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchOrganizations = async () => {
+            try {
+                const response = await axios.get('/organizations/', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setOrganizations(response.data);
+            } catch (err) {
+                console.error('Error fetching organizations:', err);
+                setError(err.response?.data.detail || 'Failed to fetch organizations');
+            }
+        };
+
+        fetchOrganizations();
+    }, [authToken]);
+
+    // Determine if the user can manage organizations
+    const canManage = ['ADMIN', 'BUSINESS_OWNER'].includes(user?.role);
+
+    return (
+        <Paper elevation={3} sx={{ maxHeight: 400, overflow: 'auto', p: 2 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">Organizations</Typography>
+                {canManage && (
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        component={Link}
+                        to="/organizations/create"
+                    >
+                        Create Organization
+                    </Button>
+                )}
+            </Box>
+            {error && <Alert severity="error">{error}</Alert>}
+            <List>
+                {organizations.map(org => (
+                    <ListItem
+                        key={org.id}
+                        divider
+                        component={Link}
+                        to={`/organizations/${org.id}`}
+                        button
+                        sx={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                        <ListItemText
+                            primary={org.name}
+                            secondary={org.description}
+                        />
+                    </ListItem>
+                ))}
+                {organizations.length === 0 && (
+                    <ListItem>
+                        <ListItemText primary="No organizations found." />
+                    </ListItem>
+                )}
+            </List>
+        </Paper>
+    );
+};
+
+export default OrganizationsList;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Queues\CreateQueue.js ===
+// src/components/Queues/CreateQueue.js
+
+import React, { useState, useContext, useEffect } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { useNavigate } from 'react-router-dom';
+import { Container, Typography, Box, TextField, Button, Select, MenuItem, InputLabel, FormControl, Alert } from '@mui/material';
+
+const CreateQueue = () => {
+    const { authToken } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const [name, setName] = useState('');
+    const [queue_type, setQueueType] = useState('GENERAL');
+    const [max_capacity, setMaxCapacity] = useState('');
+    const [status, setStatus] = useState('OPEN');
+    const [service_id, setServiceId] = useState('');
+    const [organization_id, setOrganizationId] = useState('');
+    const [services, setServices] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
+
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                const response = await axios.get('/services/', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setServices(response.data);
+            } catch (err) {
+                console.error('Error fetching services:', err);
+            }
+        };
+
+        const fetchOrganizations = async () => {
+            try {
+                const response = await axios.get('/organizations/', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setOrganizations(response.data);
+            } catch (err) {
+                console.error('Error fetching organizations:', err);
+            }
+        };
+
+        fetchServices();
+        fetchOrganizations();
+    }, [authToken]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        if (!service_id && !organization_id) {
+            // Queue will be tied directly to the user
+        } else if (service_id && organization_id) {
+            setError('Please select either a Service or an Organization, not both.');
+            return;
+        }
+
+        try {
+            await axios.post('/queues/', {
+                name,
+                queue_type,
+                max_capacity: max_capacity ? parseInt(max_capacity) : null,
+                status,
+                service_id: service_id ? parseInt(service_id) : null,
+                organization_id: organization_id ? parseInt(organization_id) : null,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+
+            navigate('/queues');
+        } catch (err) {
+            console.error('Error creating queue:', err);
+            setError(err.response?.data.detail || 'Failed to create queue');
+        }
+    };
+
+    return (
+        <Container maxWidth="sm">
+            <Box mt={5}>
+                <Typography variant="h4" gutterBottom>
+                    Create Queue
+                </Typography>
+                {error && <Alert severity="error">{error}</Alert>}
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        label="Name"
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                    <FormControl variant="outlined" margin="normal" fullWidth>
+                        <InputLabel id="queue-type-label">Queue Type</InputLabel>
+                        <Select
+                            labelId="queue-type-label"
+                            label="Queue Type"
+                            value={queue_type}
+                            onChange={(e) => setQueueType(e.target.value)}
+                        >
+                            <MenuItem value="GENERAL">General</MenuItem>
+                            <MenuItem value="TOKEN_BASED">Token Based</MenuItem>
+                            <MenuItem value="PRIORITY">Priority</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        label="Max Capacity"
+                        variant="outlined"
+                        margin="normal"
+                        type="number"
+                        fullWidth
+                        value={max_capacity}
+                        onChange={(e) => setMaxCapacity(e.target.value)}
+                    />
+                    <FormControl variant="outlined" margin="normal" fullWidth>
+                        <InputLabel id="status-label">Status</InputLabel>
+                        <Select
+                            labelId="status-label"
+                            label="Status"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                        >
+                            <MenuItem value="OPEN">Open</MenuItem>
+                            <MenuItem value="PAUSED">Paused</MenuItem>
+                            <MenuItem value="CLOSED">Closed</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl variant="outlined" margin="normal" fullWidth>
+                        <InputLabel id="service-label">Service</InputLabel>
+                        <Select
+                            labelId="service-label"
+                            label="Service"
+                            value={service_id}
+                            onChange={(e) => setServiceId(e.target.value)}
+                        >
+                            <MenuItem value="">
+                                <em>None</em>
+                            </MenuItem>
+                            {services.map(service => (
+                                <MenuItem key={service.id} value={service.id}>{service.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <FormControl variant="outlined" margin="normal" fullWidth>
+                        <InputLabel id="organization-label">Organization</InputLabel>
+                        <Select
+                            labelId="organization-label"
+                            label="Organization"
+                            value={organization_id}
+                            onChange={(e) => setOrganizationId(e.target.value)}
+                        >
+                            <MenuItem value="">
+                                <em>None</em>
+                            </MenuItem>
+                            {organizations.map(org => (
+                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                        Create
+                    </Button>
+                </form>
+            </Box>
+        </Container>
+    );
+};
+
+export default CreateQueue;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Queues\JoinQueue.js ===
+import React, { useState, useContext } from 'react';
+import { Button, Alert, Typography, Box } from '@mui/material';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+
+const JoinQueue = ({ queueId }) => {
+  const { authToken } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const [joinedItem, setJoinedItem] = useState(null);
+  const [error, setError] = useState('');
+
+  const handleJoin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // Call the join endpoint
+      const response = await axios.post(`/queues/${queueId}/join`, {}, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setJoinedItem(response.data);
+    } catch (err) {
+      console.error('Error joining queue:', err);
+      setError(err.response?.data.detail || 'Failed to join queue');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box sx={{ mt: 2 }}>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {joinedItem ? (
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            You have joined the queue!
+          </Typography>
+          <Typography>
+            <strong>Token Number:</strong> {joinedItem.token_number}
+          </Typography>
+          <Typography>
+            <strong>Confirmation Code:</strong> {joinedItem.join_hash}
+          </Typography>
+          <Typography>
+            <strong>Joined At:</strong> {new Date(joinedItem.joined_at).toLocaleString()}
+          </Typography>
+        </Box>
+      ) : (
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleJoin}
+          disabled={loading}
+        >
+          {loading ? 'Joining...' : 'Join Queue'}
+        </Button>
+      )}
+    </Box>
+  );
+};
+
+export default JoinQueue;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Queues\QueueDetail.js ===
+// src/components/Queues/QueueDetail.js
+import React from 'react';
+import JoinQueue from './JoinQueue';
+
+const QueueDetail = ({ queue }) => {
+  return (
+    <div>
+      <h2>{queue.name}</h2>
+
+      {/* Show queue description if you added it */}
+      {queue.description && (
+        <p><strong>Description:</strong> {queue.description}</p>
+      )}
+
+      {/* Show the user who created it */}
+      <p>
+        <strong>Created By:</strong>{" "}
+        {queue.user ? queue.user.name : "Unknown"}
+      </p>
+
+      {/* Show the list of people who joined */}
+      <h3>Joined Users</h3>
+      {queue.queue_items.length === 0 ? (
+        <p>No one has joined yet.</p>
+      ) : (
+        <ul>
+          {queue.queue_items.map((item) => (
+            <li key={item.id}>
+              <p>User: {item.user ? item.user.name : "Anonymous"}</p>
+              <p>Token: {item.token_number}</p>
+              <p>Join Hash: {item.join_hash}</p>
+              <p>Joined At: {new Date(item.joined_at).toLocaleString()}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* The "Join Queue" button if user wants to join */}
+      <JoinQueue queueId={queue.id} />
+    </div>
+  );
+};
+
+export default QueueDetail;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Queues\QueueDetailWrapper.js ===
+import React, { useEffect, useState, useContext } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from '../../utils/axios';
+import { AuthContext } from '../../contexts/AuthContext';
+import QueueDetail from './QueueDetail';
+import { Container, Typography, Alert } from '@mui/material';
+
+const QueueDetailWrapper = () => {
+  const { queueId } = useParams();
+  const { authToken } = useContext(AuthContext);
+  const [queue, setQueue] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchQueue = async () => {
+      try {
+        const response = await axios.get(`/queues/${queueId}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        setQueue(response.data);
+      } catch (err) {
+        setError(err.response?.data.detail || 'Failed to fetch queue');
+      }
+    };
+    fetchQueue();
+  }, [queueId, authToken]);
+
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
+  if (!queue) {
+    return <Typography>Loading queue details...</Typography>;
+  }
+  return (
+    <Container>
+      <QueueDetail queue={queue} />
+    </Container>
+  );
+};
+
+export default QueueDetailWrapper;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Queues\QueueItemsList.js ===
+// src/components/QueueItems/QueueItemsList.js
+
+import React, { useEffect, useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { List, ListItem, ListItemText, Paper, Chip, Button, Typography, Box, Alert } from '@mui/material';
+import { Link } from 'react-router-dom';
+
+const QueueItemsList = () => {
+    const { authToken } = useContext(AuthContext);
+    const [queueItems, setQueueItems] = useState([]);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchQueueItems = async () => {
+            try {
+                const response = await axios.get('/queue_items/', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setQueueItems(response.data);
+            } catch (err) {
+                console.error('Error fetching queue items:', err);
+                setError(err.response?.data.detail || 'Failed to fetch queue items');
+            }
+        };
+
+        fetchQueueItems();
+    }, [authToken]);
+
+    return (
+        <Paper elevation={3} sx={{ maxHeight: 400, overflow: 'auto', p: 2 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">Queue Items</Typography>
+                <Button variant="contained" color="primary" component={Link} to="/queue-items/create">
+                    Add Queue Item
+                </Button>
+            </Box>
+            {error && <Alert severity="error">{error}</Alert>}
+            <List>
+                {queueItems.map(item => (
+                    <ListItem key={item.id} divider>
+                        <ListItemText
+                            primary={`Token ${item.token_number} - ${item.user ? item.user.name : 'Anonymous'}`}
+                            secondary={`Status: ${item.status} | Joined At: ${new Date(item.joined_at).toLocaleString()}`}
+                        />
+                        <Chip label={item.status} color={
+                            item.status === 'WAITING' ? 'default' :
+                            item.status === 'BEING_SERVE' ? 'info' :
+                            item.status === 'COMPLETED' ? 'success' :
+                            'error'
+                        } />
+                    </ListItem>
+                ))}
+                {queueItems.length === 0 && (
+                    <ListItem>
+                        <ListItemText primary="No queue items found." />
+                    </ListItem>
+                )}
+            </List>
+        </Paper>
+    );
+};
+
+export default QueueItemsList;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Queues\QueuesList.js ===
+// src/components/Queues/QueuesList.js
+
+import React, { useState, useEffect, useContext } from 'react'; // Import useState, useEffect, useContext
+import { AuthContext } from '../../contexts/AuthContext'; // Import AuthContext
+import axios from '../../utils/axios'; // Import axios
+import { List, ListItem, ListItemText, Paper, Chip, Stack, Button, Typography, Box, Alert, IconButton } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { Edit, Delete } from '@mui/icons-material';
+import JoinQueue from './JoinQueue';
+
+const QueuesList = () => {
+    const { authToken, user } = useContext(AuthContext);
+    const [queues, setQueues] = useState([]);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchQueues = async () => {
+            try {
+                const response = await axios.get('/queues/', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setQueues(response.data);
+            } catch (err) {
+                console.error('Error fetching queues:', err);
+                setError(err.response?.data.detail || 'Failed to fetch queues');
+            }
+        };
+
+        fetchQueues();
+    }, [authToken]);
+
+    // Determine permissions based on role
+    const canManage = ['ADMIN', 'BUSINESS_OWNER'].includes(user?.role);
+
+    const handleDelete = async (queueId) => {
+        if (!window.confirm('Are you sure you want to delete this queue?')) return;
+
+        try {
+            await axios.delete(`/queues/${queueId}`, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+            setQueues(queues.filter(queue => queue.id !== queueId));
+        } catch (err) {
+            console.error('Error deleting queue:', err);
+            setError(err.response?.data.detail || 'Failed to delete queue');
+        }
+    };
+
+    return (
+        <Paper elevation={3} sx={{ maxHeight: 400, overflow: 'auto', p: 2 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">Queues</Typography>
+                <Button variant="contained" color="primary" component={Link} to="/queues/create">
+                    Create Queue
+                </Button>
+            </Box>
+            {error && <Alert severity="error">{error}</Alert>}
+            <List>
+                {queues.map(queue => (
+                    <ListItem key={queue.id} divider
+                      component={Link}
+                      to={`/queues/${queue.id}`}
+                      button
+                      sx={{ textDecoration: 'none', color: 'inherit' }}>
+                        <ListItemText
+                            primary={queue.name}
+                            secondary={`Type: ${queue.queue_type} | Status: ${queue.status}`}
+                          />
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <JoinQueue queueId={queue.id} />
+                            <Chip label={queue.status} color={
+                                queue.status === 'OPEN' ? 'success' :
+                                queue.status === 'PAUSED' ? 'warning' :
+                                'error'
+                            } />
+                            {canManage && (
+                                <>
+                                    <IconButton component={Link} to={`/queues/update/${queue.id}`} color="primary">
+                                        <Edit />
+                                    </IconButton>
+                                    <IconButton onClick={() => handleDelete(queue.id)} color="error">
+                                        <Delete />
+                                    </IconButton>
+                                </>
+                            )}
+                        </Stack>
+                    </ListItem>
+                ))}
+                {queues.length === 0 && (
+                    <ListItem>
+                        <ListItemText primary="No queues found." />
+                    </ListItem>
+                )}
+            </List>
+        </Paper>
+    );
+};
+
+export default QueuesList;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Queues\UpdateQueue.js ===
+// src/components/Queues/UpdateQueue.js
+
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Container, Typography, Box, TextField, Button, Select, MenuItem, InputLabel, FormControl, Alert } from '@mui/material';
+
+const UpdateQueue = () => {
+    const { authToken } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const { queueId } = useParams();
+
+    const [name, setName] = useState('');
+    const [queue_type, setQueueType] = useState('');
+    const [max_capacity, setMaxCapacity] = useState('');
+    const [status, setStatus] = useState('');
+
+    const [error, setError] = useState('');
+    const [serviceId, setServiceId] = useState(null);
+
+    useEffect(() => {
+        const fetchQueue = async () => {
+            try {
+                const response = await axios.get(`/queues/${queueId}`, {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                const data = response.data;
+                setName(data.name);
+                setQueueType(data.queue_type);
+                setMaxCapacity(data.max_capacity || '');
+                setStatus(data.status);
+                setServiceId(data.service_id);
+            } catch (err) {
+                console.error('Error fetching queue:', err);
+                setError(err.response?.data.detail || 'Failed to fetch queue');
+            }
+        };
+
+        fetchQueue();
+    }, [queueId, authToken]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        try {
+            await axios.put(`/queues/${queueId}`, {
+                name,
+                queue_type,
+                max_capacity: max_capacity ? parseInt(max_capacity) : null,
+                status,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            });
+
+            navigate(`/services/${serviceId}/queues`);
+        } catch (err) {
+            console.error('Error updating queue:', err);
+            setError(err.response?.data.detail || 'Failed to update queue');
+        }
+    };
+
+    if (error && !serviceId) {
+        // If there's an error fetching the queue and no serviceId is set, don't render the form
+        return (
+            <Container maxWidth="sm">
+                <Box mt={5}>
+                    <Alert severity="error">{error}</Alert>
+                </Box>
+            </Container>
+        );
+    }
+
+    return (
+        <Container maxWidth="sm">
+            <Box mt={5}>
+                <Typography variant="h4" gutterBottom>
+                    Update Queue
+                </Typography>
+                {error && <Alert severity="error">{error}</Alert>}
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        label="Name"
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                    <FormControl variant="outlined" margin="normal" fullWidth>
+                        <InputLabel id="queue-type-label">Queue Type</InputLabel>
+                        <Select
+                            labelId="queue-type-label"
+                            label="Queue Type"
+                            value={queue_type}
+                            onChange={(e) => setQueueType(e.target.value)}
+                        >
+                            <MenuItem value="GENERAL">General</MenuItem>
+                            <MenuItem value="TOKEN_BASED">Token Based</MenuItem>
+                            <MenuItem value="PRIORITY">Priority</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        label="Max Capacity"
+                        variant="outlined"
+                        margin="normal"
+                        type="number"
+                        fullWidth
+                        value={max_capacity}
+                        onChange={(e) => setMaxCapacity(e.target.value)}
+                    />
+                    <FormControl variant="outlined" margin="normal" fullWidth>
+                        <InputLabel id="status-label">Status</InputLabel>
+                        <Select
+                            labelId="status-label"
+                            label="Status"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                        >
+                            <MenuItem value="OPEN">Open</MenuItem>
+                            <MenuItem value="PAUSED">Paused</MenuItem>
+                            <MenuItem value="CLOSED">Closed</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                        Update
+                    </Button>
+                </form>
+            </Box>
+        </Container>
+    );
+};
+
+export default UpdateQueue;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Services\CreateService.js ===
+// src/components/Services/CreateService.js
+
+import React, { useState, useContext, useEffect } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Typography,
+  Box,
+  TextField,
+  Button,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
+} from '@mui/material';
+
+const CreateService = () => {
+  const { authToken } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // Service fields
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [contact_email, setContactEmail] = useState('');
+  const [contact_phone, setContactPhone] = useState('');
+
+  // Error message
+  const [error, setError] = useState('');
+
+  // Organization dropdown state
+  const [organizations, setOrganizations] = useState([]);
+  const [selectedOrg, setSelectedOrg] = useState('');
+
+  // Fetch organizations on mount
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const response = await axios.get('/organizations/', {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        setOrganizations(response.data);
+      } catch (err) {
+        console.error('Error fetching organizations:', err);
+        setError('Failed to fetch organizations');
+      }
+    };
+    fetchOrgs();
+  }, [authToken]);
+
+  // Form submit handler
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Ensure user picked an organization
+    if (!selectedOrg) {
+      setError('Please select an organization.');
+      return;
+    }
+
+    try {
+      // If your backend expects organization_id as a query parameter:
+      await axios.post(
+        `/services?organization_id=${selectedOrg}`,
+        {
+          name,
+          description,
+          location,
+          contact_email,
+          contact_phone,
+        },
+        {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      );
+
+      // After successful creation, navigate back to the services list
+      navigate('/services');
+    } catch (err) {
+      console.error('Error creating service:', err);
+      setError(err.response?.data?.detail || 'Failed to create service');
+    }
+  };
+
+  return (
+    <Container maxWidth="sm">
+      <Box mt={5}>
+        <Typography variant="h4" gutterBottom>
+          Create Service
+        </Typography>
+
+        {error && <Alert severity="error">{error}</Alert>}
+
+        <form onSubmit={handleSubmit}>
+          {/* Organization dropdown */}
+          <FormControl variant="outlined" margin="normal" fullWidth>
+            <InputLabel id="org-label">Organization</InputLabel>
+            <Select
+              labelId="org-label"
+              label="Organization"
+              value={selectedOrg}
+              onChange={(e) => setSelectedOrg(e.target.value)}
+            >
+              <MenuItem value="">
+                <em>-- Select an Organization --</em>
+              </MenuItem>
+              {organizations.map((org) => (
+                <MenuItem key={org.id} value={org.id}>
+                  {org.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField
+            label="Name"
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <TextField
+            label="Description"
+            variant="outlined"
+            margin="normal"
+            multiline
+            rows={4}
+            fullWidth
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <TextField
+            label="Location"
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
+          <TextField
+            label="Contact Email"
+            variant="outlined"
+            margin="normal"
+            type="email"
+            fullWidth
+            value={contact_email}
+            onChange={(e) => setContactEmail(e.target.value)}
+          />
+          <TextField
+            label="Contact Phone"
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            value={contact_phone}
+            onChange={(e) => setContactPhone(e.target.value)}
+          />
+
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+            Create
+          </Button>
+        </form>
+      </Box>
+    </Container>
+  );
+};
+
+export default CreateService;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Services\ServiceList.js ===
+// src/components/Services/ServiceList.js
+import React, { useEffect, useState, useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { Link } from 'react-router-dom';
+import {
+  Container, Typography, Box, Button,
+  Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Paper, IconButton, Alert
+} from '@mui/material';
+import { Edit, Delete } from '@mui/icons-material';
+
+const ServiceList = () => {
+    const { authToken } = useContext(AuthContext);
+    const [services, setServices] = useState([]);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                // Call the new endpoint:
+                const response = await axios.get('/services/all', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`,
+                    },
+                });
+                setServices(response.data);
+            } catch (err) {
+                console.error('Error fetching services:', err);
+                setError(err.response?.data?.detail || 'Failed to fetch services');
+            }
+        };
+
+        fetchServices();
+    }, [authToken]);
+
+    const handleDelete = async (serviceId) => {
+        // If you want to keep a global "delete" logic, that’s up to you
+    };
+
+    return (
+        <Container maxWidth="lg">
+            <Box mt={5} mb={3} display="flex" justifyContent="space-between" alignItems="center">
+                <Typography variant="h4">All Services</Typography>
+                <Button variant="contained" color="primary" component={Link} to="/services/create">
+                    Create Service
+                </Button>
+            </Box>
+            {error && <Alert severity="error">{error}</Alert>}
+            <TableContainer component={Paper}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Service Name</TableCell>
+                            <TableCell>Organization</TableCell>
+                            <TableCell>Description</TableCell>
+                            <TableCell>Created At</TableCell>
+                            <TableCell>Actions</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {services.map((service) => (
+                            <TableRow key={service.id}>
+                                <TableCell>{service.name}</TableCell>
+                                <TableCell>
+                                  {/* Show the org name from service.organization */}
+                                  {service.organization?.name ?? '—'}
+                                </TableCell>
+                                <TableCell>{service.description}</TableCell>
+                                <TableCell>{new Date(service.created_at).toLocaleString()}</TableCell>
+                                <TableCell>
+                                    <IconButton
+                                      component={Link}
+                                      to={`/services/update/${service.id}?organization_id=${service.organization_id}`}
+                                      color="primary"
+                                    >
+                                        <Edit />
+                                    </IconButton>
+                                    <IconButton
+                                      onClick={() => handleDelete(service.id)}
+                                      color="secondary"
+                                    >
+                                        <Delete />
+                                    </IconButton>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {services.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center">
+                                    No services found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Container>
+    );
+};
+
+export default ServiceList;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\components\Services\UpdateService.js ===
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { AuthContext } from '../../contexts/AuthContext';
+import axios from '../../utils/axios';
+import { Container, Typography, Box, TextField, Button, Select, MenuItem, InputLabel, FormControl, Alert } from '@mui/material';
+
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
+
+const UpdateService = () => {
+  const { authToken } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { serviceId } = useParams();
+  const query = useQuery();
+  const organization_id = query.get("organization_id");
+
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [contact_email, setContactEmail] = useState('');
+  const [contact_phone, setContactPhone] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchService = async () => {
+      try {
+        // Include organization_id as a query parameter
+        const response = await axios.get(`/services/${serviceId}?organization_id=${organization_id}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        const data = response.data;
+        setName(data.name);
+        setDescription(data.description || '');
+        setLocation(data.location || '');
+        setContactEmail(data.contact_email || '');
+        setContactPhone(data.contact_phone || '');
+      } catch (err) {
+        console.error('Error fetching service:', err);
+        setError(err.response?.data.detail || 'Failed to fetch service');
+      }
+    };
+
+    if (organization_id) {
+      fetchService();
+    } else {
+      setError('Organization ID is missing in the URL.');
+    }
+  }, [serviceId, organization_id, authToken]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      // When updating, you might also want to include organization_id in the PUT request URL if required by your API
+      await axios.put(`/services/${serviceId}?organization_id=${organization_id}`, {
+        name,
+        description,
+        location,
+        contact_email,
+        contact_phone,
+      }, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      navigate('/services');
+    } catch (err) {
+      console.error('Error updating service:', err);
+      setError(err.response?.data.detail || 'Failed to update service');
+    }
+  };
+
+  return (
+    <Container maxWidth="sm">
+      <Box mt={5}>
+        <Typography variant="h4" gutterBottom>
+          Update Service
+        </Typography>
+        {error && <Alert severity="error">{error}</Alert>}
+        <form onSubmit={handleSubmit}>
+          <TextField
+            label="Name"
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <TextField
+            label="Description"
+            variant="outlined"
+            margin="normal"
+            multiline
+            rows={4}
+            fullWidth
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <TextField
+            label="Location"
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
+          <TextField
+            label="Contact Email"
+            variant="outlined"
+            margin="normal"
+            type="email"
+            fullWidth
+            value={contact_email}
+            onChange={(e) => setContactEmail(e.target.value)}
+          />
+          <TextField
+            label="Contact Phone"
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            value={contact_phone}
+            onChange={(e) => setContactPhone(e.target.value)}
+          />
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+            Update
+          </Button>
+        </form>
+      </Box>
+    </Container>
+  );
+};
+
+export default UpdateService;
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\contexts\AuthContext.js ===
+// src/contexts/AuthContext.js
+
+import React, { createContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode'; // Named import for version 4.x
+import axios from '../utils/axios';
+
+export const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+    const [authToken, setAuthToken] = useState(() => localStorage.getItem('authToken'));
+    const [user, setUser] = useState(() => (authToken ? jwtDecode(authToken) : null));
+
+    useEffect(() => {
+        if (authToken) {
+            try {
+                const decodedUser = jwtDecode(authToken);
+                setUser(decodedUser);
+                localStorage.setItem('authToken', authToken);
+            } catch (error) {
+                console.error('Invalid token:', error);
+                setAuthToken(null);
+            }
+        } else {
+            setUser(null);
+            localStorage.removeItem('authToken');
+        }
+    }, [authToken]);
+
+    const loginUser = async (email, password) => {
+        try {
+            const response = await axios.post('/auth/login', new URLSearchParams({
+                username: email,
+                password: password,
+            }), {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            });
+
+            setAuthToken(response.data.access_token);
+            return { success: true };
+        } catch (error) {
+            console.error('Login failed:', error);
+            return { success: false, message: error.response?.data.detail || 'Login failed' };
+        }
+    };
+
+    const registerUser = async (name, email, password, phone_number) => {
+        try {
+            await axios.post('/auth/register', {
+                name,
+                email,
+                password,
+                phone_number,
+            });
+
+            // Auto-login after registration
+            const loginResponse = await loginUser(email, password);
+            if (loginResponse.success) {
+                return { success: true };
+            } else {
+                return { success: false, message: 'Registration successful, but login failed.' };
+            }
+        } catch (error) {
+            console.error('Registration failed:', error);
+            return { success: false, message: error.response?.data.detail || 'Registration failed' };
+        }
+    };
+
+    const logoutUser = () => {
+        setAuthToken(null);
+    };
+
+    const contextData = {
+        user, // Contains user information and role
+        authToken,
+        loginUser,
+        registerUser,
+        logoutUser,
+    };
+
+    return (
+        <AuthContext.Provider value={contextData}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+
+=== File: C:\PersonalProjects\TimeWait\frontend\src\utils\axios.js ===
+// src/utils/axios.js
+
+import axios from 'axios';
+
+const instance = axios.create({
+    baseURL: 'http://localhost:8000', // Replace with your backend URL
+});
+
+// Add a request interceptor to include the token
+instance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+export default instance;
+
