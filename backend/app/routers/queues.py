@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from .. import schemas, crud, models
 from ..dependencies import get_db, get_current_user
-
+from ..utils.kafka import publish_event
 router = APIRouter(
     prefix="/queues",
     tags=["queues"],
@@ -111,7 +111,41 @@ def update_queue(queue_id: int, updates: schemas.QueueUpdate, db: Session = Depe
 
     updated_queue = crud.update_queue(db, queue_id, updates)
     return updated_queue
+@router.delete("/{queue_id}/items/{item_id}", status_code=204)
+async def remove_queue_item(
+    queue_id: int,
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    queue = crud.get_queue(db, queue_id)
+    if not queue:
+        raise HTTPException(status_code=404, detail="Queue not found.")
 
+    # If queue is under an organization, check membership role
+    org_id = None
+    if queue.organization_id:
+        org_id = queue.organization_id
+    elif queue.service_id and queue.service:
+        org_id = queue.service.organization_id
+
+    if org_id:
+        membership = crud.get_membership(db, org_id, current_user.id)
+        if not membership or membership.role not in [models.UserRole.ADMIN, models.UserRole.BUSINESS_OWNER]:
+            raise HTTPException(status_code=403, detail="Insufficient permissions to remove items from this queue.")
+    else:
+        # If queue is tied to a user, ensure the current user is the owner
+        if queue.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="You are not the owner of this queue.")
+
+    success = crud.delete_queue_item(db, item_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Queue item not found.")
+
+    await publish_event("QUEUE_ITEM_REMOVED", {
+        "queue_id": queue_id,
+        "item_id": item_id
+    })
 @router.delete("/{queue_id}", status_code=204)
 def delete_queue(queue_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """
@@ -148,7 +182,7 @@ def delete_queue(queue_id: int, db: Session = Depends(get_db), current_user: mod
     return
 
 @router.post("/{queue_id}/join", response_model=schemas.QueueItemRead)
-def join_queue(queue_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def join_queue(queue_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     # Check queue
     queue = crud.get_queue(db, queue_id)
     if not queue:
@@ -184,4 +218,11 @@ def join_queue(queue_id: int, db: Session = Depends(get_db), current_user: model
 
     # Create the queue item in the database
     queue_item = crud.create_queue_item(db, queue_item_create)
+    await publish_event("QUEUE_ITEM_JOINED", {
+        "queue_id": queue_id,
+        "user_id": current_user.id,
+        "token_number": token_number,
+        "joined_at": joined_at.isoformat(),
+        "queue_item_id": queue_item.id
+    })
     return queue_item

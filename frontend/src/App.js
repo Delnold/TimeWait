@@ -18,7 +18,8 @@ import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import QueuesList from "./components/Queues/QueuesList";
 import OrganizationsList from "./components/Organizations/OrganizationsList";
 import DashboardPage from "./components/DashboardPage";
-import QueueDetailWrapper from './components/Queues/QueueDetailWrapper'; // NEW: Import QueueDetailWrapper
+import QueueDetailWrapper from './components/Queues/QueueDetailWrapper';
+import QueueAdmin from "./components/Queues/QueueAdmin"; // NEW: Import QueueDetailWrapper
 
 const App = () => {
     const { authToken, logoutUser, user } = useContext(AuthContext); // Access AuthContext
@@ -90,7 +91,14 @@ const App = () => {
                 <Route path="/organizations" element={<PrivateRoute><OrganizationsList/></PrivateRoute>} />
                 <Route path="/organizations/create" element={<PrivateRoute><CreateOrganization /></PrivateRoute>} />
                 <Route path="/organizations/:organizationId" element={<PrivateRoute><OrganizationDetail /></PrivateRoute>} />
-
+                <Route
+                    path="/queues/:queueId/admin"
+                    element={
+                        <PrivateRoute>
+                            <QueueAdmin/>
+                        </PrivateRoute>
+                    }
+                />
                 {/* Catch-All Route */}
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
