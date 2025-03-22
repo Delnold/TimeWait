@@ -22,7 +22,7 @@ const QueueDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Listen for real-time events
+  // Listen for real-time WebSocket events
   const updates = useQueueUpdates();
 
   // Fetch the queue details from the backend API
@@ -46,23 +46,34 @@ const QueueDetail = () => {
   useEffect(() => {
     if (!queue) return;
     updates.forEach(event => {
-      if (event.event_type === 'QUEUE_ITEM_REMOVED' &&
-          parseInt(event.payload.queue_id, 10) === parseInt(queueId, 10)) {
+      // Handle removal events
+      if (
+        event.event_type === 'QUEUE_ITEM_REMOVED' &&
+        parseInt(event.payload.queue_id, 10) === parseInt(queueId, 10)
+      ) {
         setQueue(prev => ({
           ...prev,
           queue_items: prev.queue_items.filter(item => item.id !== event.payload.item_id)
         }));
-      } else if (event.event_type === 'QUEUE_ITEM_JOINED' &&
-                 parseInt(event.payload.queue_id, 10) === parseInt(queueId, 10)) {
-        // Avoid duplicates by checking if the item already exists
+      }
+      // Handle join events—avoid duplicates by checking both the item id and join_hash
+      else if (
+        event.event_type === 'QUEUE_ITEM_JOINED' &&
+        parseInt(event.payload.queue_id, 10) === parseInt(queueId, 10)
+      ) {
         setQueue(prev => {
           if (!prev) return prev;
-          const exists = prev.queue_items.some(item => item.id === event.payload.queue_item_id);
+          const exists = prev.queue_items.some(
+            item =>
+              item.id === event.payload.queue_item_id ||
+              (item.join_hash && item.join_hash === event.payload.join_hash)
+          );
           if (exists) return prev;
           const newItem = {
             id: event.payload.queue_item_id,
             token_number: event.payload.token_number,
             joined_at: event.payload.joined_at,
+            join_hash: event.payload.join_hash, // use join_hash for duplicate checking
             user: {
               id: event.payload.user_id,
               name: event.payload.user_name || 'Anonymous'
@@ -70,8 +81,12 @@ const QueueDetail = () => {
           };
           return { ...prev, queue_items: [...prev.queue_items, newItem] };
         });
-      } else if (event.event_type === 'QUEUE_UPDATED' &&
-                 event.payload.queue_id === queueId) {
+      }
+      // Handle generic queue updates
+      else if (
+        event.event_type === 'QUEUE_UPDATED' &&
+        event.payload.queue_id === queueId
+      ) {
         setQueue(prev => ({ ...prev, ...event.payload.updates }));
       }
     });
@@ -91,7 +106,7 @@ const QueueDetail = () => {
       await axios.delete(`/queues/${queueId}/items/${itemId}`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
-      // Removal will be reflected by the WebSocket event.
+      // The state update will be handled by the WebSocket event
     } catch (err) {
       alert(err.response?.data?.detail || 'Failed to remove queue item.');
     }

@@ -156,19 +156,27 @@ def delete_queue(queue_id: int, db: Session = Depends(get_db),
     return
 
 @router.post("/{queue_id}/join", response_model=schemas.QueueItemRead)
-async def join_queue(queue_id: int, db: Session = Depends(get_db),
-                     current_user: models.User = Depends(get_current_user)):
+async def join_queue(
+    queue_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     queue = crud.get_queue(db, queue_id)
     if not queue:
         raise HTTPException(status_code=404, detail="Queue not found.")
 
+    # Check if user already in queue
     existing_item = db.query(models.QueueItem).filter_by(queue_id=queue_id, user_id=current_user.id).first()
     if existing_item:
         raise HTTPException(status_code=400, detail="You have already joined this queue.")
 
+    # Next token number
     current_count = db.query(models.QueueItem).filter(models.QueueItem.queue_id == queue_id).count()
     token_number = current_count + 1
+
     joined_at = datetime.utcnow()
+
+    # Create the queue item
     unique_data = f"{current_user.id}-{queue_id}-{joined_at.isoformat()}-{uuid.uuid4()}"
     join_hash = hashlib.sha256(unique_data.encode()).hexdigest()
 
@@ -182,14 +190,17 @@ async def join_queue(queue_id: int, db: Session = Depends(get_db),
         served_at=None,
         join_hash=join_hash
     )
-
     queue_item = crud.create_queue_item(db, queue_item_create)
+
+    # PUBLISH A CORRECT EVENT:
+    # Make sure "queue_item_id" is queue_item.id (the primary key), not None
     await publish_event("QUEUE_ITEM_JOINED", {
         "queue_id": queue_id,
+        "queue_item_id": queue_item.id,            # unique ID from DB
         "user_id": current_user.id,
-        "user_name": current_user.name,  # Include user name for frontend display
+        "user_name": current_user.name,            # or current_user.email, etc.
         "token_number": token_number,
         "joined_at": joined_at.isoformat(),
-        "queue_item_id": queue_item.id
     })
+
     return queue_item
