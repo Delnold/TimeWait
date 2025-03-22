@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from ..schemas.queue_item import QueueItemRead
-from backend.app.schemas import UserRead
+from ..schemas import UserRead
 
 
 class QueueType(str, Enum):

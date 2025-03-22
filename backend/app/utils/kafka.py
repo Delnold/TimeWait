@@ -1,7 +1,7 @@
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 import json
 
-KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
+KAFKA_BOOTSTRAP_SERVERS = "kafka:9092"
 TOPIC_QUEUE_UPDATES = "queue-updates"
 
 producer = None

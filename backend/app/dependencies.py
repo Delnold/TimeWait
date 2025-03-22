@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from . import crud, models, schemas
 from .database import SessionLocal
+from .auth import SECRET_KEY, ALGORITHM  # Import the secret key and algorithm
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -17,16 +18,14 @@ def get_db():
         db.close()
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    print(token)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, "your_secret_key", algorithms=["HS256"])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: int = payload.get("sub")
-        print(user_id)
         if user_id is None:
             raise credentials_exception
         token_data = schemas.TokenData(sub=str(user_id))

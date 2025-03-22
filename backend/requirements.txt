@@ -10,3 +10,4 @@ python-jose[cryptography]
 pydantic
 python-multipart
 pydantic[email]
+aiokafka

@@ -22,10 +22,10 @@ const QueueDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Get real-time events from Kafka via WebSocket
+  // Listen for real-time events
   const updates = useQueueUpdates();
 
-  // Fetch queue details from backend
+  // Fetch the queue details from the backend API
   useEffect(() => {
     const fetchQueue = async () => {
       try {
@@ -42,7 +42,7 @@ const QueueDetail = () => {
     fetchQueue();
   }, [queueId, authToken]);
 
-  // Process WebSocket events to update queue state in real time.
+  // Process incoming WebSocket events
   useEffect(() => {
     if (!queue) return;
     updates.forEach(event => {
@@ -54,17 +54,22 @@ const QueueDetail = () => {
         }));
       } else if (event.event_type === 'QUEUE_ITEM_JOINED' &&
                  parseInt(event.payload.queue_id, 10) === parseInt(queueId, 10)) {
-        // Append new item if not already in the list
-        setQueue(prev => ({
-          ...prev,
-          queue_items: [...prev.queue_items, {
+        // Avoid duplicates by checking if the item already exists
+        setQueue(prev => {
+          if (!prev) return prev;
+          const exists = prev.queue_items.some(item => item.id === event.payload.queue_item_id);
+          if (exists) return prev;
+          const newItem = {
             id: event.payload.queue_item_id,
             token_number: event.payload.token_number,
             joined_at: event.payload.joined_at,
-            // Minimal user info – adjust if you need more details
-            user: { id: event.payload.user_id }
-          }]
-        }));
+            user: {
+              id: event.payload.user_id,
+              name: event.payload.user_name || 'Anonymous'
+            }
+          };
+          return { ...prev, queue_items: [...prev.queue_items, newItem] };
+        });
       } else if (event.event_type === 'QUEUE_UPDATED' &&
                  event.payload.queue_id === queueId) {
         setQueue(prev => ({ ...prev, ...event.payload.updates }));
@@ -72,8 +77,7 @@ const QueueDetail = () => {
     });
   }, [updates, queue, queueId]);
 
-  // Check permissions: if the queue is tied to a user, only the owner can manage;
-  // if it's organization‑based, assume ADMIN or BUSINESS_OWNER can manage.
+  // Determine if the current user has permission to manage (remove items)
   const canManageQueue = () => {
     if (!queue || !user) return false;
     if (queue.user_id && queue.user_id === user.sub) return true;
@@ -81,14 +85,13 @@ const QueueDetail = () => {
     return false;
   };
 
-  // Handler to remove a queue item.
   const handleRemoveItem = async (itemId) => {
     if (!window.confirm('Are you sure you want to remove this item?')) return;
     try {
       await axios.delete(`/queues/${queueId}/items/${itemId}`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
-      // The removal will be reflected via the WebSocket event.
+      // Removal will be reflected by the WebSocket event.
     } catch (err) {
       alert(err.response?.data?.detail || 'Failed to remove queue item.');
     }
@@ -118,14 +121,10 @@ const QueueDetail = () => {
             <ListItem key={item.id} divider>
               <ListItemText
                 primary={`Token: ${item.token_number}`}
-                secondary={`User: ${item.user ? item.user.name : 'Anonymous'}`}
+                secondary={`User: ${item.user && item.user.name ? item.user.name : 'Anonymous'}`}
               />
               {canManageQueue() && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleRemoveItem(item.id)}
-                >
+                <Button variant="outlined" color="error" onClick={() => handleRemoveItem(item.id)}>
                   Remove
                 </Button>
               )}

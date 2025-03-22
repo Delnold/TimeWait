@@ -1,7 +1,7 @@
-// frontend/src/hooks/useQueueUpdates.js
+// src/hooks/useQueueUpdates.js
 import { useEffect, useState } from 'react';
 
-function useQueueUpdates() {
+function useQueueUpdates(maxEvents = 50) {
   const [updates, setUpdates] = useState([]);
 
   useEffect(() => {
@@ -10,7 +10,11 @@ function useQueueUpdates() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setUpdates(prev => [...prev, data]);
+        setUpdates(prev => {
+          const newUpdates = [...prev, data];
+          // Limit to last 50 events
+          return newUpdates.slice(-maxEvents);
+        });
       } catch (err) {
         console.error("WebSocket parse error:", err);
       }
@@ -23,9 +27,9 @@ function useQueueUpdates() {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [maxEvents]);
 
-  return updates; // array of { event_type, payload } objects
+  return updates;
 }
 
 export default useQueueUpdates;
