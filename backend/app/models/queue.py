@@ -26,6 +26,8 @@ class Queue(Base):
     max_capacity = Column(Integer, nullable=True)
     status = Column(Enum(QueueStatus), default=QueueStatus.OPEN)
     created_at = Column(DateTime, default=datetime.utcnow)
+    access_token = Column(String, unique=True, nullable=True)
+    qr_code_url = Column(String, nullable=True)
 
     # Foreign keys
     service_id = Column(Integer, ForeignKey("services.id"), nullable=True)

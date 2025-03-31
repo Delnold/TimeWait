@@ -25,6 +25,8 @@ class QueueBase(BaseModel):
     status: QueueStatus = QueueStatus.OPEN
     service_id: Optional[int] = None
     organization_id: Optional[int] = None
+    access_token: Optional[str] = None
+    qr_code_url: Optional[str] = None
 
 class QueueCreate(QueueBase):
     pass  # user_id will be set from current_user
@@ -37,6 +39,8 @@ class QueueUpdate(BaseModel):
     status: Optional[QueueStatus] = None
     service_id: Optional[int] = None
     organization_id: Optional[int] = None
+    access_token: Optional[str] = None
+    qr_code_url: Optional[str] = None
 
 class QueueRead(QueueBase):
     id: int

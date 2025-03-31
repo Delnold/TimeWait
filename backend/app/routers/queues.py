@@ -186,12 +186,17 @@ def delete_queue(queue_id: int, db: Session = Depends(get_db),
 @router.post("/{queue_id}/join", response_model=schemas.QueueItemRead)
 async def join_queue(
     queue_id: int,
+    token: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     queue = crud.get_queue(db, queue_id)
     if not queue:
         raise HTTPException(status_code=404, detail="Queue not found.")
+
+    # Validate access for token-based queues
+    if not crud.validate_queue_access(db, queue_id, token):
+        raise HTTPException(status_code=403, detail="Invalid access token or insufficient permissions.")
 
     # Check if user already in queue
     existing_item = db.query(models.QueueItem).filter_by(queue_id=queue_id, user_id=current_user.id).first()
@@ -235,4 +240,26 @@ async def join_queue(
         "average_wait_time": avg_wait
     })
 
-    return schemas.QueueItemRead(**queue_item_dict)
+    return queue_item_dict
+
+@router.get("/{queue_id}/access-info", response_model=dict)
+def get_queue_access_info(
+    queue_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    queue = crud.get_queue(db, queue_id)
+    if not queue:
+        raise HTTPException(status_code=404, detail="Queue not found.")
+
+    # Check permissions
+    if queue.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view access info for your own queues.")
+
+    if queue.queue_type != models.QueueType.TOKEN_BASED:
+        raise HTTPException(status_code=400, detail="This queue is not token-based.")
+
+    return {
+        "access_token": queue.access_token,
+        "qr_code_url": queue.qr_code_url
+    }
