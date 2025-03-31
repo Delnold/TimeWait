@@ -39,7 +39,7 @@ from .queue_item import (
     get_queue_item,
     get_queue_items,
     update_queue_item,
-    delete_queue_item, estimate_waiting_time
+    delete_queue_item, estimate_waiting_time, calculate_average_service_time, calculate_average_waiting_time
 )
 
 from .membership import (
@@ -95,5 +95,7 @@ __all__ = [
     "get_average_wait_time",
     "get_queue_history_stats",
     "validate_queue_access",
-    "estimate_waiting_time"
+    "estimate_waiting_time",
+    "calculate_average_service_time",
+    "calculate_average_waiting_time"
 ]
