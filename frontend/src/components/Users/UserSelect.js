@@ -18,38 +18,35 @@ const UserSelect = ({ value, onChange, excludeUserIds = [], label = "Select User
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
+    const fetchUsers = async (query = '') => {
+        setLoading(true);
+        try {
+            const response = await axios.get('/users/', {
+                params: query ? { search: query } : {}
+            });
+            console.log('Users response:', response.data);
+            // Filter out excluded users
+            const filteredUsers = response.data.items.filter(
+                user => !excludeUserIds.includes(user.id)
+            );
+            setOptions(filteredUsers);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Debounced search function
     const debouncedSearch = React.useCallback(
-        debounce(async (query) => {
-            if (!query) {
-                setOptions([]);
-                return;
-            }
-
-            setLoading(true);
-            try {
-                const response = await axios.get('/users/', {
-                    params: { search: query },
-                    headers: {
-                        Authorization: `Bearer ${authToken}`,
-                    },
-                });
-                // Filter out excluded users
-                const filteredUsers = response.data.items.filter(
-                    user => !excludeUserIds.includes(user.id)
-                );
-                setOptions(filteredUsers);
-            } catch (error) {
-                console.error('Error fetching users:', error);
-            } finally {
-                setLoading(false);
-            }
-        }, 300),
+        debounce((query) => fetchUsers(query), 300),
         [authToken, excludeUserIds]
     );
 
     useEffect(() => {
-        if (!open) {
+        if (open) {
+            fetchUsers();
+        } else {
             setOptions([]);
         }
     }, [open]);
@@ -98,14 +95,21 @@ const UserSelect = ({ value, onChange, excludeUserIds = [], label = "Select User
                             <Typography variant="body1">
                                 {option.name}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                {option.email}
-                            </Typography>
+                            <Box display="flex" flexDirection="column">
+                                <Typography variant="caption" color="text.secondary">
+                                    {option.email}
+                                </Typography>
+                                {option.phone_number && (
+                                    <Typography variant="caption" color="text.secondary">
+                                        {option.phone_number}
+                                    </Typography>
+                                )}
+                            </Box>
                         </Box>
                     </Box>
                 </li>
             )}
-            noOptionsText="No users found"
+            noOptionsText={loading ? "Loading..." : "No users found"}
         />
     );
 };
