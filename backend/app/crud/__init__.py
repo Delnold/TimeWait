@@ -31,7 +31,9 @@ from .queue import (
     get_queue,
     get_queues,
     update_queue,
-    delete_queue, validate_queue_access, get_queue_by_token
+    delete_queue,
+    validate_queue_access,
+    get_queue_by_token
 )
 
 from .queue_item import (
@@ -39,7 +41,10 @@ from .queue_item import (
     get_queue_item,
     get_queue_items,
     update_queue_item,
-    delete_queue_item, estimate_waiting_time, calculate_average_service_time, calculate_average_waiting_time,
+    delete_queue_item,
+    estimate_waiting_time,
+    calculate_average_service_time,
+    calculate_average_waiting_time
 )
 
 from .membership import (
@@ -55,6 +60,16 @@ from .queue_history import (
     get_queue_history,
     get_average_wait_time,
     get_queue_history_stats
+)
+
+from .notification import (
+    create_notification,
+    get_notification,
+    get_user_notifications,
+    update_notification,
+    mark_as_read,
+    delete_notification,
+    get_unread_count
 )
 
 __all__ = [
@@ -80,11 +95,16 @@ __all__ = [
     "get_queues",
     "update_queue",
     "delete_queue",
+    "validate_queue_access",
+    "get_queue_by_token",
     "create_queue_item",
     "get_queue_item",
     "get_queue_items",
     "update_queue_item",
     "delete_queue_item",
+    "estimate_waiting_time",
+    "calculate_average_service_time",
+    "calculate_average_waiting_time",
     "create_membership",
     "get_membership",
     "get_memberships_by_organization",
@@ -94,9 +114,11 @@ __all__ = [
     "get_queue_history",
     "get_average_wait_time",
     "get_queue_history_stats",
-    "validate_queue_access",
-    "estimate_waiting_time",
-    "calculate_average_service_time",
-    "calculate_average_waiting_time",
-    'get_queue_by_token'
+    "create_notification",
+    "get_notification",
+    "get_user_notifications",
+    "update_notification",
+    "mark_as_read",
+    "delete_notification",
+    "get_unread_count"
 ]

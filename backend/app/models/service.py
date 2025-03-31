@@ -20,3 +20,4 @@ class Service(Base):
     # Relationships
     organization = relationship("Organization", back_populates="services")
     queues = relationship("Queue", back_populates="service", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="service", cascade="all, delete-orphan")

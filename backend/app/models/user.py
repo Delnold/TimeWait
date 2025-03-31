@@ -22,9 +22,12 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.USER)
 
     # Relationships
+    organizations = relationship("Organization", back_populates="user")
+    services = relationship("Service", back_populates="user")
     queues = relationship("Queue", back_populates="user")
     queue_items = relationship("QueueItem", back_populates="user")
     memberships = relationship("Membership", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user")
     queue_history = relationship("QueueHistory", back_populates="user")
 
     __table_args__ = {'extend_existing': True}

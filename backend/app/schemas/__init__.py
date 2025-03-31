@@ -7,6 +7,7 @@ from .service import ServiceBase, ServiceCreate, ServiceUpdate, ServiceRead
 from .queue import QueueBase, QueueCreate, QueueUpdate, QueueRead
 from .organization import OrganizationBase, OrganizationCreate, OrganizationUpdate, OrganizationRead, OrganizationShort
 from .queue_history import QueueHistoryRead, QueueHistoryBase, QueueHistoryCreate
+from .notification import NotificationCreate, NotificationUpdate, NotificationRead
 
 __all__ = [
     "OrganizationBase",
@@ -36,8 +37,10 @@ __all__ = [
     "TokenData",
     "QueueHistoryRead",
     "QueueHistoryCreate",
-    "QueueHistoryBase"
-
+    "QueueHistoryBase",
+    "NotificationCreate",
+    "NotificationUpdate",
+    "NotificationRead"
 ]
 
 # Now rebuild models; by this time, ServiceRead is imported and defined.

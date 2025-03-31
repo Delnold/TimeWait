@@ -35,7 +35,7 @@ const QueuesList = () => {
     }, [authToken]);
 
     // Determine permissions based on role
-    const canManage = ['ADMIN', 'BUSINESS_OWNER'].includes(user?.role);
+    const canManage = ['admin', 'business_owner'].includes(user?.role);
 
     const handleDelete = async (queueId, event) => {
         event.preventDefault();

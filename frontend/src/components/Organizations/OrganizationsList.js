@@ -30,7 +30,7 @@ const OrganizationsList = () => {
     }, [authToken]);
 
     // Determine if the user can manage organizations
-    const canManage = ['ADMIN', 'BUSINESS_OWNER'].includes(user?.role);
+    const canManage = ['admin', 'business_owner'].includes(user?.role);
 
     return (
         <Paper elevation={3} sx={{ maxHeight: 400, overflow: 'auto', p: 2 }}>

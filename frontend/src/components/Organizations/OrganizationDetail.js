@@ -55,8 +55,8 @@ const OrganizationDetail = () => {
 
     // Determine if the current user has ADMIN or BUSINESS_OWNER role
     const currentMembership = organization.memberships.find(m => m.user_id === user?.sub);
-    const isAdmin = currentMembership && currentMembership.role === 'ADMIN';
-    const isBusinessOwner = currentMembership && currentMembership.role === 'BUSINESS_OWNER';
+    const isAdmin = currentMembership && currentMembership.role === 'admin';
+    const isBusinessOwner = currentMembership && currentMembership.role === 'business_owner';
 
     return (
         <Container maxWidth="md">

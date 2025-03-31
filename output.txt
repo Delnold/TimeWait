@@ -461,7 +461,7 @@ const MainPage = () => {
     }, [queueSearch, queues]);
 
     // Determine if the user can create organizations
-    const canCreateOrganization = ['ADMIN', 'BUSINESS_OWNER'].includes(user?.role);
+    const canCreateOrganization = ['admin', 'business_owner'].includes(user?.role);
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4 }}>

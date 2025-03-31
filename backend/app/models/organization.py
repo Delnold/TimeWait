@@ -18,3 +18,4 @@ class Organization(Base):
     services = relationship("Service", back_populates="organization", cascade="all, delete-orphan")
     queues = relationship("Queue", back_populates="organization", cascade="all, delete-orphan")  # Renamed
     memberships = relationship("Membership", back_populates="organization", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="organization", cascade="all, delete-orphan")
