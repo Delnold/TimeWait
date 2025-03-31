@@ -60,7 +60,7 @@ def read_queue(queue_id: int, db: Session = Depends(get_db)):
     queue = (
         db.query(models.Queue)
         .options(
-            joinedload(models.Queue.user),  # load the queue’s creator
+            joinedload(models.Queue.user),  # load the queue's creator
             joinedload(models.Queue.queue_items).joinedload(models.QueueItem.user)  # load user for each item
         )
         .filter(models.Queue.id == queue_id)
@@ -192,15 +192,20 @@ async def join_queue(
     )
     queue_item = crud.create_queue_item(db, queue_item_create)
 
+    # Calculate estimated waiting time
+    estimated_wait = crud.estimate_waiting_time(db, queue_id, token_number)
+    queue_item_dict = schemas.QueueItemRead.model_validate(queue_item).model_dump()
+    queue_item_dict["estimated_wait_time"] = estimated_wait
+
     # PUBLISH A CORRECT EVENT:
-    # Make sure "queue_item_id" is queue_item.id (the primary key), not None
     await publish_event("QUEUE_ITEM_JOINED", {
         "queue_id": queue_id,
-        "queue_item_id": queue_item.id,            # unique ID from DB
+        "queue_item_id": queue_item.id,
         "user_id": current_user.id,
-        "user_name": current_user.name,            # or current_user.email, etc.
+        "user_name": current_user.name,
         "token_number": token_number,
         "joined_at": joined_at.isoformat(),
+        "estimated_wait_time": estimated_wait
     })
 
-    return queue_item
+    return queue_item_dict

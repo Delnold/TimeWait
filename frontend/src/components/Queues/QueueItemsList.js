@@ -5,6 +5,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import axios from '../../utils/axios';
 import { List, ListItem, ListItemText, Paper, Chip, Button, Typography, Box, Alert } from '@mui/material';
 import { Link } from 'react-router-dom';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 const QueueItemsList = () => {
     const { authToken } = useContext(AuthContext);
@@ -29,6 +30,15 @@ const QueueItemsList = () => {
         fetchQueueItems();
     }, [authToken]);
 
+    const formatWaitTime = (minutes) => {
+        if (minutes < 60) {
+            return `${minutes} minutes`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        return `${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
+    };
+
     return (
         <Paper elevation={3} sx={{ maxHeight: 400, overflow: 'auto', p: 2 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -42,7 +52,19 @@ const QueueItemsList = () => {
                 {queueItems.map(item => (
                     <ListItem key={item.id} divider>
                         <ListItemText
-                            primary={`Token ${item.token_number} - ${item.user ? item.user.name : 'Anonymous'}`}
+                            primary={
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <span>{`Token ${item.token_number} - ${item.user ? item.user.name : 'Anonymous'}`}</span>
+                                    {item.status === 'WAITING' && item.estimated_wait_time !== null && (
+                                        <Box display="flex" alignItems="center" gap={0.5}>
+                                            <AccessTimeIcon fontSize="small" color="action" />
+                                            <Typography variant="body2" color="text.secondary">
+                                                {formatWaitTime(item.estimated_wait_time)}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                            }
                             secondary={`Status: ${item.status} | Joined At: ${new Date(item.joined_at).toLocaleString()}`}
                         />
                         <Chip label={item.status} color={

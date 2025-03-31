@@ -14,11 +14,12 @@ class QueueItemBase(BaseModel):
     served_at: Optional[datetime] = None
 
 class QueueItemCreate(QueueItemBase):
-    join_hash: Optional[str] = None
+    join_hash: str
 
 class QueueItemRead(QueueItemBase):
     id: int
-    join_hash: Optional[str] = None  # <--- add this
+    join_hash: str
+    estimated_wait_time: Optional[int] = None  # in minutes
     user: Optional[UserRead] = None
 
     class Config:
