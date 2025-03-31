@@ -94,7 +94,7 @@ def validate_queue_access(db: Session, queue_id: int, token: Optional[str] = Non
         return True
 
     # For token-based queues, validate the token
-    if not token:
+    if not token or not queue.access_token:
         return False
 
     return validate_access_token(token, queue.access_token)
