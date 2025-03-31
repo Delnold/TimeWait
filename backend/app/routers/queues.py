@@ -111,20 +111,24 @@ async def remove_queue_item(queue_id: int, item_id: int,
     if not queue_item:
         raise HTTPException(status_code=404, detail="Queue item not found.")
 
-    # Determine if the queue is organization/service tied or user tied
-    org_id = None
-    if queue.organization_id:
-        org_id = queue.organization_id
-    elif queue.service_id and queue.service:
-        org_id = queue.service.organization_id
-
-    if org_id:
-        membership = crud.get_membership(db, org_id, current_user.id)
-        if not membership or membership.role not in [models.UserRole.ADMIN, models.UserRole.BUSINESS_OWNER]:
-            raise HTTPException(status_code=403, detail="Insufficient permissions to remove items from this queue.")
+    # Allow global admins to remove items from any queue
+    if current_user.role == models.UserRole.ADMIN:
+        pass  # Admin can proceed
     else:
-        if queue.user_id != current_user.id:
-            raise HTTPException(status_code=403, detail="You are not the owner of this queue.")
+        # Determine if the queue is organization/service tied or user tied
+        org_id = None
+        if queue.organization_id:
+            org_id = queue.organization_id
+        elif queue.service_id and queue.service:
+            org_id = queue.service.organization_id
+
+        if org_id:
+            membership = crud.get_membership(db, org_id, current_user.id)
+            if not membership or membership.role not in [models.UserRole.ADMIN, models.UserRole.BUSINESS_OWNER]:
+                raise HTTPException(status_code=403, detail="Insufficient permissions to remove items from this queue.")
+        else:
+            if queue.user_id != current_user.id:
+                raise HTTPException(status_code=403, detail="You are not the owner of this queue.")
 
     # Update the waiting time before deletion
     if queue_item.status != models.QueueItemStatus.COMPLETED:
