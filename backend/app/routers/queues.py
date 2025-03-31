@@ -3,10 +3,11 @@ from datetime import datetime
 import hashlib, uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from .. import schemas, crud, models
 from ..dependencies import get_db, get_current_user
 from ..utils.kafka import publish_event
+
 router = APIRouter(
     prefix="/queues",
     tags=["queues"],
@@ -105,6 +106,11 @@ async def remove_queue_item(queue_id: int, item_id: int,
     if not queue:
         raise HTTPException(status_code=404, detail="Queue not found.")
 
+    # Get the queue item before deletion to calculate waiting time
+    queue_item = crud.get_queue_item(db, item_id)
+    if not queue_item:
+        raise HTTPException(status_code=404, detail="Queue item not found.")
+
     # Determine if the queue is organization/service tied or user tied
     org_id = None
     if queue.organization_id:
@@ -120,13 +126,21 @@ async def remove_queue_item(queue_id: int, item_id: int,
         if queue.user_id != current_user.id:
             raise HTTPException(status_code=403, detail="You are not the owner of this queue.")
 
+    # Update the waiting time before deletion
+    if queue_item.status != models.QueueItemStatus.COMPLETED:
+        queue_item.status = models.QueueItemStatus.COMPLETED
+        queue_item.served_at = datetime.utcnow()
+        queue_item.update_waiting_time()
+        db.commit()
+
     success = crud.delete_queue_item(db, item_id)
     if not success:
         raise HTTPException(status_code=404, detail="Queue item not found.")
 
     await publish_event("QUEUE_ITEM_REMOVED", {
         "queue_id": queue_id,
-        "item_id": item_id
+        "item_id": item_id,
+        "waiting_time": queue_item.waiting_time
     })
 
 @router.delete("/{queue_id}", status_code=204)
@@ -192,20 +206,19 @@ async def join_queue(
     )
     queue_item = crud.create_queue_item(db, queue_item_create)
 
-    # Calculate estimated waiting time
-    estimated_wait = crud.estimate_waiting_time(db, queue_id, token_number)
+    # Calculate estimated waiting time and average waiting time
+    estimated_wait, avg_wait = crud.estimate_waiting_time(db, queue_id, token_number)
     queue_item_dict = schemas.QueueItemRead.model_validate(queue_item).model_dump()
     queue_item_dict["estimated_wait_time"] = estimated_wait
+    queue_item_dict["average_wait_time"] = avg_wait
 
-    # PUBLISH A CORRECT EVENT:
+    # Publish event
     await publish_event("QUEUE_ITEM_JOINED", {
         "queue_id": queue_id,
-        "queue_item_id": queue_item.id,
-        "user_id": current_user.id,
-        "user_name": current_user.name,
+        "item_id": queue_item.id,
         "token_number": token_number,
-        "joined_at": joined_at.isoformat(),
-        "estimated_wait_time": estimated_wait
+        "estimated_wait_time": estimated_wait,
+        "average_wait_time": avg_wait
     })
 
-    return queue_item_dict
+    return schemas.QueueItemRead(**queue_item_dict)

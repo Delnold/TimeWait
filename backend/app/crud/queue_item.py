@@ -1,9 +1,9 @@
 # backend/app/crud/queue_item.py
 
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from .. import models, schemas
 
 def create_queue_item(db: Session, queue_item: schemas.QueueItemCreate) -> models.QueueItem:
@@ -12,15 +12,35 @@ def create_queue_item(db: Session, queue_item: schemas.QueueItemCreate) -> model
         user_id=queue_item.user_id,
         token_number=queue_item.token_number,
         status=queue_item.status,
-        joined_at=queue_item.joined_at,
+        joined_at=queue_item.joined_at or datetime.utcnow(),
         called_at=queue_item.called_at,
         served_at=queue_item.served_at,
-        join_hash=queue_item.join_hash  # new field
+        join_hash=queue_item.join_hash
     )
     db.add(db_queue_item)
     db.commit()
     db.refresh(db_queue_item)
     return db_queue_item
+
+def calculate_average_waiting_time(db: Session, queue_id: int, lookback_hours: int = 24) -> Optional[float]:
+    """
+    Calculate the average waiting time for a queue based on completed and being served items
+    within the last specified hours.
+    """
+    lookback_time = datetime.utcnow() - timedelta(hours=lookback_hours)
+    
+    # Get items that have either been completed or are being served
+    items = db.query(models.QueueItem).filter(
+        models.QueueItem.queue_id == queue_id,
+        models.QueueItem.joined_at >= lookback_time,
+        models.QueueItem.waiting_time != None
+    ).all()
+    
+    if not items:
+        return None
+    
+    total_waiting_time = sum(item.waiting_time for item in items if item.waiting_time is not None)
+    return total_waiting_time / len(items)
 
 def calculate_average_service_time(db: Session, queue_id: int, lookback_hours: int = 24) -> Optional[float]:
     """
@@ -49,15 +69,17 @@ def calculate_average_service_time(db: Session, queue_id: int, lookback_hours: i
     
     return total_service_time / len(completed_items)
 
-def estimate_waiting_time(db: Session, queue_id: int, token_number: int) -> Optional[int]:
+def estimate_waiting_time(db: Session, queue_id: int, token_number: int) -> Tuple[Optional[int], Optional[float]]:
     """
     Estimate waiting time in minutes for a specific token number in a queue.
-    Returns None if estimation is not possible.
+    Returns a tuple of (estimated_wait_time, average_historical_wait_time).
     """
-    # Get average service time
+    # Get average service time and historical waiting time
     avg_service_time = calculate_average_service_time(db, queue_id)
+    avg_waiting_time = calculate_average_waiting_time(db, queue_id)
+    
     if avg_service_time is None:
-        return None
+        return None, avg_waiting_time
     
     # Count number of waiting people before this token
     people_ahead = db.query(func.count(models.QueueItem.id)).filter(
@@ -79,7 +101,7 @@ def estimate_waiting_time(db: Session, queue_id: int, token_number: int) -> Opti
     # Calculate estimated waiting time
     estimated_minutes = (people_ahead / active_service_points) * avg_service_time
     
-    return round(estimated_minutes)
+    return round(estimated_minutes), avg_waiting_time
 
 def get_queue_item(db: Session, queue_item_id: int) -> Optional[models.QueueItem]:
     return db.query(models.QueueItem).filter(models.QueueItem.id == queue_item_id).first()
@@ -96,8 +118,24 @@ def update_queue_item(db: Session, queue_item_id: int, updates: schemas.QueueUpd
     queue_item = get_queue_item(db, queue_item_id)
     if not queue_item:
         return None
+
+    # Store the old status
+    old_status = queue_item.status
+
+    # Update the queue item
     for key, value in updates.dict(exclude_unset=True).items():
         setattr(queue_item, key, value)
+
+    # If status has changed to BEING_SERVE or COMPLETED, update timestamps and waiting time
+    if updates.status and updates.status != old_status:
+        if updates.status == models.QueueItemStatus.BEING_SERVE:
+            queue_item.called_at = datetime.utcnow()
+        elif updates.status == models.QueueItemStatus.COMPLETED:
+            queue_item.served_at = datetime.utcnow()
+        
+        # Update waiting time
+        queue_item.update_waiting_time()
+
     db.commit()
     db.refresh(queue_item)
     return queue_item
