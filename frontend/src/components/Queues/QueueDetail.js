@@ -110,6 +110,13 @@ const QueueDetail = () => {
     return false;
   };
 
+  // Check if user has admin privileges
+  const hasAdminPrivileges = () => {
+    if (!user) return false;
+    if (user.role === 'admin' || user.role === 'business_owner') return true;
+    return false;
+  };
+
   const handleRemoveItem = async (itemId) => {
     if (!window.confirm('Are you sure you want to remove this item?')) return;
     try {

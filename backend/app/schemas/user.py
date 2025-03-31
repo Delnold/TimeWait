@@ -25,7 +25,7 @@ class UserRead(BaseModel):
     name: str
     email: str
     role: str
-    phone_number: str
+    phone_number: Optional[str] = None
 
     class Config:
         from_attributes = True  # Updated from orm_mode

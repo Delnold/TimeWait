@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from .. import schemas, crud, models
-from ..dependencies import get_db, get_current_user
+from  ..dependencies import get_db, get_current_user
 
 router = APIRouter(
     prefix="/organizations/{organization_id}/memberships",
