@@ -22,7 +22,6 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.USER)
 
     # Relationships
-    organizations = relationship("Organization", back_populates="user")
     services = relationship("Service", back_populates="user")
     queues = relationship("Queue", back_populates="user")
     queue_items = relationship("QueueItem", back_populates="user")

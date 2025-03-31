@@ -15,9 +15,11 @@ class Service(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="services")
+    user = relationship("User", back_populates="services")
     queues = relationship("Queue", back_populates="service", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="service", cascade="all, delete-orphan")
