@@ -20,6 +20,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app  # For live development; remove in production
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
 
   frontend:
     build:
@@ -35,6 +36,10 @@ services:
       - backend
     volumes:
       - ./frontend/src:/app/src  # For live development; remove in production
+      - ./frontend/public:/app/public  # For live development; remove in production
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes in Windows
+    command: npm start
 
   db:
     image: postgres:14
