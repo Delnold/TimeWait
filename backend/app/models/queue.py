@@ -6,12 +6,12 @@ import enum
 from datetime import datetime
 from ..database import Base
 
-class QueueType(enum.Enum):
+class QueueType(str, enum.Enum):
     GENERAL = "GENERAL"
     TOKEN_BASED = "TOKEN_BASED"
     PRIORITY = "PRIORITY"
 
-class QueueStatus(enum.Enum):
+class QueueStatus(str, enum.Enum):
     OPEN = "OPEN"
     PAUSED = "PAUSED"
     CLOSED = "CLOSED"
@@ -22,9 +22,9 @@ class Queue(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    queue_type = Column(Enum(QueueType), default=QueueType.GENERAL)
+    queue_type = Column(String, default=QueueType.GENERAL)
     max_capacity = Column(Integer, nullable=True)
-    status = Column(Enum(QueueStatus), default=QueueStatus.OPEN)
+    status = Column(String, default=QueueStatus.OPEN)
     created_at = Column(DateTime, default=datetime.utcnow)
     access_token = Column(String, unique=True, nullable=True)
     qr_code_url = Column(String, nullable=True)

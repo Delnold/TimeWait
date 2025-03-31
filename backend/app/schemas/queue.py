@@ -47,6 +47,8 @@ class QueueRead(QueueBase):
     created_at: datetime
     user: Optional[UserRead] = None  # Include user info if tied to a user
     queue_items: List[QueueItemRead] = []
+    access_token: Optional[str] = None
+    qr_code_url: Optional[str] = None
     class Config:
         orm_mode = True
 # Do not import ServiceRead or OrganizationRead here to avoid circular imports
