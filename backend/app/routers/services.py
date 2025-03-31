@@ -66,7 +66,7 @@ def create_service(
         logger.warning(f"User {current_user.id} lacks permission to create service in organization {organization_id}")
         raise HTTPException(status_code=403, detail="Insufficient permissions.")
     try:
-        new_service = crud.create_service(db, service, organization_id)
+        new_service = crud.create_service(db, service, organization_id, current_user.id)
         logger.info(
             f"Service created with id {new_service.id} in organization {organization_id} by user {current_user.id}")
     except Exception as e:

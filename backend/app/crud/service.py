@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from .. import models, schemas
 
-def create_service(db: Session, service: schemas.ServiceCreate, organization_id: int) -> models.Service:
+def create_service(db: Session, service: schemas.ServiceCreate, organization_id: int, user_id: int) -> models.Service:
     db_service = models.Service(
         name=service.name,
         description=service.description,
-        organization_id=organization_id
+        organization_id=organization_id,
+        user_id=user_id
     )
     db.add(db_service)
     db.commit()
