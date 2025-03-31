@@ -83,7 +83,7 @@ const QueueDetail = () => {
             id: event.payload.queue_item_id,
             token_number: event.payload.token_number,
             joined_at: event.payload.joined_at,
-            join_hash: event.payload.join_hash,
+            join_hash: event.payload.join_hash, // use join_hash for duplicate checking
             user: {
               id: event.payload.user_id,
               name: event.payload.user_name || 'Anonymous'
@@ -105,8 +105,8 @@ const QueueDetail = () => {
   // Determine if the current user has permission to manage (remove items)
   const canManageQueue = () => {
     if (!queue || !user) return false;
-    if (queue.user_id === user.id) return true;
-    if (user.role === 'admin' || user.role === 'BUSINESS_OWNER') return true;
+    if (queue.user_id && queue.user_id === user.sub) return true;
+    if (user.role === 'ADMIN' || user.role === 'BUSINESS_OWNER') return true;
     return false;
   };
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import axios from '../../utils/axios';
 import { List, ListItem, ListItemText, Paper, Chip, Stack, Button, Typography, Box, Alert, IconButton, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Edit, Delete } from '@mui/icons-material';
 import JoinQueue from './JoinQueue';
 
@@ -14,6 +14,7 @@ const QueuesList = () => {
     const [error, setError] = useState('');
     const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
     const [accessToken, setAccessToken] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchQueues = async () => {
@@ -54,11 +55,6 @@ const QueuesList = () => {
         }
     };
 
-    const handleEdit = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-    };
-
     const handleTokenSubmit = async () => {
         try {
             const response = await axios.get(`/queues/by-token/${accessToken}`, {
@@ -67,15 +63,23 @@ const QueuesList = () => {
                 },
             });
             if (response.data) {
-                setQueues(prev => {
-                    if (!prev.some(q => q.id === response.data.id)) {
-                        return [...prev, response.data];
+                // Join the queue directly after finding it
+                await axios.post(
+                    `/queues/${response.data.id}/join?token=${accessToken}`,
+                    {},
+                    {
+                        headers: { 
+                            Authorization: `Bearer ${authToken}`,
+                            'Content-Type': 'application/json'
+                        },
                     }
-                    return prev;
-                });
+                );
+                // Navigate to the queue page
+                navigate(`/queues/${response.data.id}`);
+                setTokenDialogOpen(false);
+                setAccessToken('');
+                setError('');
             }
-            setTokenDialogOpen(false);
-            setAccessToken('');
         } catch (err) {
             setError('Invalid access token');
         }
@@ -115,7 +119,7 @@ const QueuesList = () => {
                 {visibleQueues.map(queue => (
                     <ListItem 
                         key={queue.id} 
-                        divider 
+                        divider
                         sx={{ 
                             display: 'flex', 
                             justifyContent: 'space-between',
@@ -123,15 +127,7 @@ const QueuesList = () => {
                             color: 'inherit'
                         }}
                     >
-                        <Box 
-                            component={Link} 
-                            to={`/queues/${queue.id}`}
-                            sx={{ 
-                                flexGrow: 1, 
-                                textDecoration: 'none', 
-                                color: 'inherit'
-                            }}
-                        >
+                        <Box component={Link} to={`/queues/${queue.id}`} sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}>
                             <ListItemText
                                 primary={queue.name}
                                 secondary={`Type: ${queue.queue_type} | Status: ${queue.status}`}
@@ -139,7 +135,7 @@ const QueuesList = () => {
                         </Box>
                         <Stack direction="row" spacing={1} alignItems="center">
                             {queue.queue_type !== 'TOKEN_BASED' && (
-                                <JoinQueue queueId={queue.id} queueType={queue.queue_type} />
+                                <JoinQueue queueId={queue.id} />
                             )}
                             <Chip 
                                 label={queue.status} 
@@ -155,7 +151,7 @@ const QueuesList = () => {
                                         component={Link} 
                                         to={`/queues/update/${queue.id}`} 
                                         color="primary"
-                                        onClick={handleEdit}
+                                        onClick={(e) => e.stopPropagation()}
                                     >
                                         <Edit />
                                     </IconButton>
@@ -178,7 +174,7 @@ const QueuesList = () => {
             </List>
 
             <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)}>
-                <DialogTitle>Enter Queue Access Token</DialogTitle>
+                <DialogTitle>Enter Access Token</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus
@@ -189,6 +185,8 @@ const QueuesList = () => {
                         variant="outlined"
                         value={accessToken}
                         onChange={(e) => setAccessToken(e.target.value)}
+                        error={!!error}
+                        helperText={error}
                     />
                 </DialogContent>
                 <DialogActions>
