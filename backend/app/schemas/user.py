@@ -1,7 +1,7 @@
 # backend/app/schemas/user.py
 
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 from ..models.user import UserRole
@@ -29,3 +29,10 @@ class UserRead(BaseModel):
 
     class Config:
         from_attributes = True  # Updated from orm_mode
+
+class UserList(BaseModel):
+    total: int
+    items: List[UserRead]
+    
+    class Config:
+        from_attributes = True

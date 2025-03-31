@@ -1,6 +1,6 @@
 # backend/app/schemas/__init__.py
 from .queue_item import QueueItemCreate, QueueItemRead
-from .user import UserBase, UserCreate, UserUpdate, UserRead
+from .user import UserBase, UserCreate, UserUpdate, UserRead, UserList
 from .membership import MembershipBase, MembershipCreate, MembershipUpdate, MembershipRead
 from .token import Token, TokenData
 from .service import ServiceBase, ServiceCreate, ServiceUpdate, ServiceRead
@@ -40,7 +40,8 @@ __all__ = [
     "QueueHistoryBase",
     "NotificationCreate",
     "NotificationUpdate",
-    "NotificationRead"
+    "NotificationRead",
+    "UserList",
 ]
 
 # Now rebuild models; by this time, ServiceRead is imported and defined.

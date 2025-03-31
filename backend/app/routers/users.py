@@ -1,10 +1,11 @@
 # backend/app/routers/users.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from .. import schemas, crud
 from ..dependencies import get_db, get_current_user
+from ..models.user import UserRole
 
 router = APIRouter(
     prefix="/users",
@@ -13,10 +14,25 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.get("/", response_model=List[schemas.UserRead])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = crud.get_users(db, skip=skip, limit=limit)
-    return users
+@router.get("/", response_model=schemas.UserList)
+def get_users(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=100),
+    search: Optional[str] = Query(default=None, min_length=1),
+    db: Session = Depends(get_db),
+    current_user: schemas.UserRead = Depends(get_current_user)
+):
+    """
+    Get list of users with optional search by name or email.
+    Only authenticated users can access this endpoint.
+    """
+    users = crud.get_users(db, skip=skip, limit=limit, search=search)
+    total = len(users)  # In a real app, you might want to do a separate count query
+    
+    return {
+        "total": total,
+        "items": users
+    }
 
 @router.get("/{user_id}", response_model=schemas.UserRead)
 def read_user(user_id: int, db: Session = Depends(get_db)):

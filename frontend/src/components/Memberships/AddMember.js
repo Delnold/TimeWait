@@ -9,35 +9,34 @@ import {
     DialogTitle, 
     DialogContent, 
     DialogActions, 
-    TextField, 
     Select, 
     MenuItem, 
     InputLabel, 
     FormControl, 
     Alert,
-    Box,
-    Typography
+    Box
 } from '@mui/material';
+import UserSelect from '../Users/UserSelect';
 
 const AddMember = ({ organizationId, refreshOrganization }) => {
     const { authToken } = useContext(AuthContext);
     const [open, setOpen] = useState(false);
-    const [userId, setUserId] = useState('');
+    const [selectedUser, setSelectedUser] = useState(null);
     const [role, setRole] = useState('user');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleAdd = async () => {
-        setError('');
-        if (!userId.trim()) {
-            setError('User ID is required');
+        if (!selectedUser) {
+            setError('Please select a user');
             return;
         }
-        
+
+        setError('');
         setLoading(true);
         try {
             await axios.post(`/organizations/${organizationId}/memberships/`, {
-                user_id: parseInt(userId),
+                user_id: selectedUser.id,
                 role,
             }, {
                 headers: {
@@ -45,7 +44,7 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
                 },
             });
             setOpen(false);
-            setUserId('');
+            setSelectedUser(null);
             setRole('user');
             refreshOrganization();
         } catch (err) {
@@ -56,64 +55,36 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
         }
     };
 
-    const getRoleLabel = (role) => {
-        switch (role) {
-            case 'admin':
-                return 'Admin';
-            case 'business_owner':
-                return 'Business Owner';
-            case 'user':
-                return 'User';
-            default:
-                return role;
-        }
+    const handleClose = () => {
+        setOpen(false);
+        setSelectedUser(null);
+        setRole('user');
+        setError('');
     };
 
     return (
         <>
-            <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={() => setOpen(true)}
-                startIcon={<span>+</span>}
-            >
+            <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
                 Add Member
             </Button>
-            <Dialog 
-                open={open} 
-                onClose={() => !loading && setOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
+            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <DialogTitle>Add New Member</DialogTitle>
                 <DialogContent>
                     {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                    <Box mb={2}>
-                        <Typography variant="body2" color="textSecondary">
-                            Enter the ID of the user you want to add to this organization.
-                            The user must already have an account in the system.
-                        </Typography>
+                    <Box sx={{ mb: 2, mt: 1 }}>
+                        <UserSelect
+                            value={selectedUser}
+                            onChange={setSelectedUser}
+                            label="Select User"
+                        />
                     </Box>
-                    <TextField
-                        label="User ID"
-                        variant="outlined"
-                        margin="normal"
-                        required
-                        fullWidth
-                        value={userId}
-                        onChange={(e) => setUserId(e.target.value)}
-                        type="number"
-                        disabled={loading}
-                        autoFocus
-                    />
-                    <FormControl variant="outlined" margin="normal" fullWidth>
+                    <FormControl fullWidth>
                         <InputLabel id="role-label">Role</InputLabel>
                         <Select
                             labelId="role-label"
                             label="Role"
                             value={role}
                             onChange={(e) => setRole(e.target.value)}
-                            disabled={loading}
                         >
                             <MenuItem value="admin">Admin</MenuItem>
                             <MenuItem value="business_owner">Business Owner</MenuItem>
@@ -122,14 +93,14 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
                     </FormControl>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpen(false)} disabled={loading}>
+                    <Button onClick={handleClose} disabled={loading}>
                         Cancel
                     </Button>
                     <Button 
                         onClick={handleAdd} 
                         variant="contained" 
                         color="primary"
-                        disabled={loading || !userId.trim()}
+                        disabled={loading || !selectedUser}
                     >
                         {loading ? 'Adding...' : 'Add Member'}
                     </Button>
