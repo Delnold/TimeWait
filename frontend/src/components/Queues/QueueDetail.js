@@ -136,7 +136,12 @@ const QueueDetail = () => {
             <ListItem key={item.id} divider>
               <ListItemText
                 primary={`Token: ${item.token_number}`}
-                secondary={`User: ${item.user && item.user.name ? item.user.name : 'Anonymous'}`}
+                secondary={
+                  <>
+                    User: {item.user && item.user.name ? item.user.name : 'Anonymous'} | 
+                    Joined At: {new Date(item.joined_at).toLocaleString()}
+                  </>
+                }
               />
               {canManageQueue() && (
                 <Button variant="outlined" color="error" onClick={() => handleRemoveItem(item.id)}>
