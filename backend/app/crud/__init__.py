@@ -50,6 +50,13 @@ from .membership import (
     delete_membership
 )
 
+from .queue_history import (
+    create_queue_history,
+    get_queue_history,
+    get_average_wait_time,
+    get_queue_history_stats
+)
+
 __all__ = [
     "get_user",
     "get_user_by_email",
@@ -82,5 +89,9 @@ __all__ = [
     "get_membership",
     "get_memberships_by_organization",
     "update_membership",
-    "delete_membership"
+    "delete_membership",
+    "create_queue_history",
+    "get_queue_history",
+    "get_average_wait_time",
+    "get_queue_history_stats"
 ]
