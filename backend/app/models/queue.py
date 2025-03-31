@@ -39,5 +39,7 @@ class Queue(Base):
     queue_items = relationship("QueueItem", back_populates="queue", cascade="all, delete-orphan")
     history_items = relationship("QueueHistory", back_populates="queue", cascade="all, delete-orphan")
 
+    __table_args__ = {'extend_existing': True}
+
     def __repr__(self):
         return f"<Queue {self.name}>"

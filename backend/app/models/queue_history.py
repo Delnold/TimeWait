@@ -10,8 +10,8 @@ class QueueHistory(Base):
     __tablename__ = "queue_history"
 
     id = Column(Integer, primary_key=True, index=True)
-    queue_id = Column(Integer, ForeignKey("queues.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Nullable for anonymous users
+    queue_id = Column(Integer, ForeignKey("queues.id", deferrable=True, initially="DEFERRED"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", deferrable=True, initially="DEFERRED"), nullable=True)  # Nullable for anonymous users
     joined_at = Column(DateTime, nullable=False)
     removed_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     waiting_time = Column(Float, nullable=False)  # Waiting time in minutes
@@ -19,6 +19,8 @@ class QueueHistory(Base):
     # Relationships
     queue = relationship("Queue", back_populates="history_items")
     user = relationship("User", back_populates="queue_history")
+
+    __table_args__ = {'extend_existing': True}
 
     def __repr__(self):
         return f"<QueueHistory {self.id} - Wait: {self.waiting_time} mins>" 

@@ -27,5 +27,7 @@ class User(Base):
     memberships = relationship("Membership", back_populates="user", cascade="all, delete-orphan")
     queue_history = relationship("QueueHistory", back_populates="user")
 
+    __table_args__ = {'extend_existing': True}
+
     def __repr__(self):
         return f"<User {self.email}>"
