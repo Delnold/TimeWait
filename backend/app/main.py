@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .database import Base, engine
-from .routers import auth, users, organizations, services, queues, memberships, stats, ws
+from .routers import auth, users, organizations, services, queues, memberships, stats, ws, queue_history
 from .utils.kafka import init_kafka_producer, shutdown_kafka_producer
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,6 +27,7 @@ app.include_router(queues.router)
 app.include_router(memberships.router)
 app.include_router(stats.router)
 app.include_router(ws.router)
+app.include_router(queue_history.router)
 
 @app.on_event("startup")
 async def on_startup():

@@ -133,6 +133,16 @@ async def remove_queue_item(queue_id: int, item_id: int,
         queue_item.update_waiting_time()
         db.commit()
 
+    # Create history record
+    history_record = schemas.QueueHistoryCreate(
+        queue_id=queue_id,
+        user_id=queue_item.user_id,
+        joined_at=queue_item.joined_at,
+        removed_at=datetime.utcnow(),
+        waiting_time=queue_item.waiting_time or 0.0
+    )
+    crud.create_queue_history(db, history_record)
+
     success = crud.delete_queue_item(db, item_id)
     if not success:
         raise HTTPException(status_code=404, detail="Queue item not found.")
