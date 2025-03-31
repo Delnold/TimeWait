@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 
-from ..database import get_db
+from ..dependencies import get_db
 from ..models.notification import NotificationStatus, NotificationType
 from ..schemas.notification import NotificationRead, NotificationCreate, NotificationUpdate
 from ..crud import notification as crud_notification
