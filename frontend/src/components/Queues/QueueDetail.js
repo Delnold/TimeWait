@@ -12,34 +12,44 @@ import {
   ListItemText,
   Button,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Card,
+  CardContent,
+  Grid
 } from '@mui/material';
 
 const QueueDetail = () => {
   const { queueId } = useParams();
   const { authToken, user } = useContext(AuthContext);
   const [queue, setQueue] = useState(null);
+  const [queueStats, setQueueStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // Listen for real-time WebSocket events
   const updates = useQueueUpdates();
 
-  // Fetch the queue details from the backend API
+  // Fetch the queue details and statistics from the backend API
   useEffect(() => {
-    const fetchQueue = async () => {
+    const fetchQueueData = async () => {
       try {
-        const res = await axios.get(`/queues/${queueId}`, {
-          headers: { Authorization: `Bearer ${authToken}` }
-        });
-        setQueue(res.data);
+        const [queueRes, statsRes] = await Promise.all([
+          axios.get(`/queues/${queueId}`, {
+            headers: { Authorization: `Bearer ${authToken}` }
+          }),
+          axios.get(`/queues/${queueId}/history/stats`, {
+            headers: { Authorization: `Bearer ${authToken}` }
+          })
+        ]);
+        setQueue(queueRes.data);
+        setQueueStats(statsRes.data);
       } catch (err) {
-        setError(err.response?.data?.detail || 'Failed to fetch queue details.');
+        setError(err.response?.data?.detail || 'Failed to fetch queue data.');
       } finally {
         setLoading(false);
       }
     };
-    fetchQueue();
+    fetchQueueData();
   }, [queueId, authToken]);
 
   // Process incoming WebSocket events
@@ -125,6 +135,64 @@ const QueueDetail = () => {
       <Typography variant="subtitle2" gutterBottom>
         Created by: {queue.user ? queue.user.name : 'Unknown'}
       </Typography>
+
+      {/* Queue Statistics */}
+      {queueStats && (
+        <Box sx={{ my: 3 }}>
+          <Typography variant="h6" gutterBottom>Queue Statistics</Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Average Wait Time
+                  </Typography>
+                  <Typography variant="h5">
+                    {Math.round(queueStats.average_wait_time)} min
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Minimum Wait Time
+                  </Typography>
+                  <Typography variant="h5">
+                    {Math.round(queueStats.min_wait_time)} min
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Maximum Wait Time
+                  </Typography>
+                  <Typography variant="h5">
+                    {Math.round(queueStats.max_wait_time)} min
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    People Served Today
+                  </Typography>
+                  <Typography variant="h5">
+                    {queueStats.total_served}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
+
       <Typography variant="h6" sx={{ mt: 3 }}>Queue Items</Typography>
       <List>
         {queue.queue_items.length === 0 ? (
@@ -140,6 +208,7 @@ const QueueDetail = () => {
                   <>
                     User: {item.user && item.user.name ? item.user.name : 'Anonymous'} | 
                     Joined At: {new Date(item.joined_at).toLocaleString()}
+                    {item.estimated_wait_time && ` | Estimated Wait: ${Math.round(item.estimated_wait_time)} min`}
                   </>
                 }
               />
