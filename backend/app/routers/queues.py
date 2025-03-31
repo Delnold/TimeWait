@@ -263,3 +263,14 @@ def get_queue_access_info(
         "access_token": queue.access_token,
         "qr_code_url": queue.qr_code_url
     }
+
+@router.get("/by-token/{token}", response_model=schemas.QueueRead)
+def get_queue_by_token(
+    token: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    queue = crud.get_queue_by_token(db, token)
+    if not queue:
+        raise HTTPException(status_code=404, detail="Queue not found")
+    return queue
