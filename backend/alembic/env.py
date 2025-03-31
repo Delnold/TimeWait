@@ -10,7 +10,7 @@ import sys
 from dotenv import load_dotenv
 
 # Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables
 load_dotenv()
@@ -27,8 +27,15 @@ config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL_POSTGRES_ALEMBI
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
+# Import all models to ensure they are included in migrations
+from app.models.user import User
+from app.models.organization import Organization
+from app.models.service import Service
+from app.models.queue import Queue
+from app.models.queue_item import QueueItem
+from app.models.membership import Membership
+from app.models.queue_history import QueueHistory
+
 from app.database import Base
 target_metadata = Base.metadata
 
