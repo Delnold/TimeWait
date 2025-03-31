@@ -83,7 +83,7 @@ const QueueDetail = () => {
             id: event.payload.queue_item_id,
             token_number: event.payload.token_number,
             joined_at: event.payload.joined_at,
-            join_hash: event.payload.join_hash, // use join_hash for duplicate checking
+            join_hash: event.payload.join_hash,
             user: {
               id: event.payload.user_id,
               name: event.payload.user_name || 'Anonymous'
@@ -105,12 +105,8 @@ const QueueDetail = () => {
   // Determine if the current user has permission to manage (remove items)
   const canManageQueue = () => {
     if (!queue || !user) return false;
-    // Global admin can manage any queue
-    if (user.role.toLowerCase() === 'admin') return true;
-    // Queue owner can manage their queue
-    if (queue.user_id === user.sub) return true;
-    // Business owner can manage organization queues
-    if (user.role.toLowerCase() === 'business_owner' && (queue.organization_id || queue.service_id)) return true;
+    if (queue.user_id === user.id) return true;
+    if (user.role === 'admin' || user.role === 'BUSINESS_OWNER') return true;
     return false;
   };
 

@@ -4,7 +4,8 @@ import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import axios from '../../utils/axios';
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, Box, TextField, Button, Select, MenuItem, InputLabel, FormControl, Alert } from '@mui/material';
+import { Container, Typography, Box, TextField, Button, Select, MenuItem, InputLabel, FormControl, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import QRCode from 'qrcode.react';
 
 const CreateQueue = () => {
     const { authToken } = useContext(AuthContext);
@@ -18,8 +19,9 @@ const CreateQueue = () => {
     const [organization_id, setOrganizationId] = useState('');
     const [services, setServices] = useState([]);
     const [organizations, setOrganizations] = useState([]);
-
     const [error, setError] = useState('');
+    const [createdQueue, setCreatedQueue] = useState(null);
+    const [showTokenDialog, setShowTokenDialog] = useState(false);
 
     useEffect(() => {
         const fetchServices = async () => {
@@ -56,6 +58,12 @@ const CreateQueue = () => {
         e.preventDefault();
         setError('');
 
+        // Validate name length
+        if (name.length < 1 || name.length > 100) {
+            setError('Queue name must be between 1 and 100 characters');
+            return;
+        }
+
         if (!service_id && !organization_id) {
             // Queue will be tied directly to the user
         } else if (service_id && organization_id) {
@@ -64,24 +72,43 @@ const CreateQueue = () => {
         }
 
         try {
-            await axios.post('/queues/', {
+            const payload = {
                 name,
                 queue_type,
                 max_capacity: max_capacity ? parseInt(max_capacity) : null,
                 status,
-                service_id: service_id ? parseInt(service_id) : null,
-                organization_id: organization_id ? parseInt(organization_id) : null,
-            }, {
+            };
+
+            // Only include service_id or organization_id if they are set
+            if (service_id) {
+                payload.service_id = parseInt(service_id);
+            }
+            if (organization_id) {
+                payload.organization_id = parseInt(organization_id);
+            }
+
+            const response = await axios.post('/queues/', payload, {
                 headers: {
                     Authorization: `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
                 },
             });
 
-            navigate('/queues');
+            if (queue_type === 'TOKEN_BASED') {
+                setCreatedQueue(response.data);
+                setShowTokenDialog(true);
+            } else {
+                navigate('/queues');
+            }
         } catch (err) {
             console.error('Error creating queue:', err);
             setError(err.response?.data.detail || 'Failed to create queue');
         }
+    };
+
+    const handleCloseTokenDialog = () => {
+        setShowTokenDialog(false);
+        navigate('/queues');
     };
 
     return (
@@ -100,6 +127,10 @@ const CreateQueue = () => {
                         fullWidth
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                        inputProps={{
+                            maxLength: 100,
+                        }}
+                        helperText={`${name.length}/100 characters`}
                     />
                     <FormControl variant="outlined" margin="normal" fullWidth>
                         <InputLabel id="queue-type-label">Queue Type</InputLabel>
@@ -122,6 +153,10 @@ const CreateQueue = () => {
                         fullWidth
                         value={max_capacity}
                         onChange={(e) => setMaxCapacity(e.target.value)}
+                        inputProps={{
+                            min: 1,
+                            max: 1000,
+                        }}
                     />
                     <FormControl variant="outlined" margin="normal" fullWidth>
                         <InputLabel id="status-label">Status</InputLabel>
@@ -142,7 +177,12 @@ const CreateQueue = () => {
                             labelId="service-label"
                             label="Service"
                             value={service_id}
-                            onChange={(e) => setServiceId(e.target.value)}
+                            onChange={(e) => {
+                                setServiceId(e.target.value);
+                                if (e.target.value) {
+                                    setOrganizationId('');
+                                }
+                            }}
                         >
                             <MenuItem value="">
                                 <em>None</em>
@@ -158,7 +198,12 @@ const CreateQueue = () => {
                             labelId="organization-label"
                             label="Organization"
                             value={organization_id}
-                            onChange={(e) => setOrganizationId(e.target.value)}
+                            onChange={(e) => {
+                                setOrganizationId(e.target.value);
+                                if (e.target.value) {
+                                    setServiceId('');
+                                }
+                            }}
                         >
                             <MenuItem value="">
                                 <em>None</em>
@@ -173,6 +218,41 @@ const CreateQueue = () => {
                     </Button>
                 </form>
             </Box>
+
+            <Dialog
+                open={showTokenDialog}
+                onClose={handleCloseTokenDialog}
+                aria-labelledby="token-dialog-title"
+                aria-describedby="token-dialog-description"
+            >
+                <DialogTitle id="token-dialog-title">Queue Access Information</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="token-dialog-description">
+                        Your queue has been created successfully. Here is the access information:
+                    </DialogContentText>
+                    <Box sx={{ mt: 2, mb: 2 }}>
+                        <Typography variant="subtitle1" gutterBottom>
+                            <strong>Access Token:</strong> {createdQueue?.access_token}
+                        </Typography>
+                        {createdQueue?.qr_code_url && (
+                            <Box sx={{ mt: 2, textAlign: 'center' }}>
+                                <Typography variant="subtitle1" gutterBottom>
+                                    <strong>QR Code:</strong>
+                                </Typography>
+                                <QRCode value={createdQueue.qr_code_url} size={200} />
+                            </Box>
+                        )}
+                    </Box>
+                    <Alert severity="warning">
+                        Please save this information! You won't be able to see the access token again.
+                    </Alert>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseTokenDialog} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 };
