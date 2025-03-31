@@ -105,8 +105,12 @@ const QueueDetail = () => {
   // Determine if the current user has permission to manage (remove items)
   const canManageQueue = () => {
     if (!queue || !user) return false;
-    if (queue.user_id && queue.user_id === user.sub) return true;
-    if (user.role === 'ADMIN' || user.role === 'BUSINESS_OWNER') return true;
+    // Global admin can manage any queue
+    if (user.role.toLowerCase() === 'admin') return true;
+    // Queue owner can manage their queue
+    if (queue.user_id === user.sub) return true;
+    // Business owner can manage organization queues
+    if (user.role.toLowerCase() === 'business_owner' && (queue.organization_id || queue.service_id)) return true;
     return false;
   };
 
