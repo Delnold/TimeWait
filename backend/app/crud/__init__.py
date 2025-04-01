@@ -120,5 +120,5 @@ __all__ = [
     "update_notification",
     "mark_as_read",
     "delete_notification",
-    "get_unread_count"
+    "get_unread_count",
 ]

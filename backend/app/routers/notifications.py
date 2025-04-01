@@ -2,21 +2,67 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
-
+import json
 from ..dependencies import get_db
 from ..models.notification import NotificationStatus, NotificationType
 from ..schemas.notification import NotificationRead, NotificationCreate, NotificationUpdate
-from ..crud import notification as crud_notification
+from ..crud import notification as crud_notification, get_user
 from ..crud import organization as crud_organization
 from ..crud import queue as crud_queue
 from ..crud import service as crud_service
+from ..crud import membership as crud_membership
 from ..dependencies import get_current_user
-from ..models.user import User
+from ..models.user import User, UserRole
 
 router = APIRouter(
     prefix="/notifications",
     tags=["notifications"]
 )
+
+@router.post("/", response_model=NotificationRead)
+async def create_notification(
+    notification: NotificationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new notification.
+    """
+    # Verify that the target user exists
+    target_user = get_user(db, user_id=notification.user_id)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target user not found"
+        )
+    
+    # If it's an organization invite, verify the organization exists
+    if notification.type == NotificationType.ORGANIZATION_INVITE:
+        if not notification.organization_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Organization ID is required for organization invites"
+            )
+        organization = crud_organization.get_organization(db, organization_id=notification.organization_id)
+        if not organization:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found"
+            )
+        
+        # Check if the user is already a member
+        existing_membership = crud_membership.get_membership(
+            db=db,
+            organization_id=notification.organization_id,
+            user_id=notification.user_id
+        )
+        if existing_membership:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is already a member of this organization"
+            )
+    
+    return crud_notification.create_notification(db=db, notification=notification)
 
 @router.get("/", response_model=List[NotificationRead])
 def get_notifications(
@@ -72,13 +118,13 @@ def mark_notification_as_read(
     return crud_notification.mark_as_read(db=db, notification_id=notification_id)
 
 @router.post("/{notification_id}/accept", response_model=NotificationRead)
-def accept_invitation(
+async def accept_invitation(
     notification_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Accept an invitation notification.
+    Accept an organization invitation.
     """
     notification = crud_notification.get_notification(db=db, notification_id=notification_id)
     if not notification:
@@ -93,78 +139,49 @@ def accept_invitation(
             detail="Not authorized to access this notification"
         )
     
+    if notification.type != NotificationType.ORGANIZATION_INVITE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This notification is not an organization invitation"
+        )
+    
     if notification.status != NotificationStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Notification is not in a pending state"
+            detail="This invitation has already been processed"
         )
     
-    # Handle different types of invitations
-    if notification.type == NotificationType.ORGANIZATION_INVITE:
-        if not notification.organization_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid organization invitation"
-            )
-        # Add user to organization
-        organization = crud_organization.get_organization(db=db, organization_id=notification.organization_id)
-        if not organization:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Organization not found"
-            )
-        crud_organization.add_member(db=db, organization=organization, user=current_user)
+    # Get the role from extra_data
+    try:
+        extra_data = json.loads(notification.extra_data or '{}')
+        role_str = extra_data.get('role', 'USER').upper()
+        role = UserRole[role_str]
+    except (json.JSONDecodeError, KeyError):
+        role = UserRole.USER
     
-    elif notification.type == NotificationType.QUEUE_INVITE:
-        if not notification.queue_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid queue invitation"
-            )
-        # Add user to queue
-        queue = crud_queue.get_queue(db=db, queue_id=notification.queue_id)
-        if not queue:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Queue not found"
-            )
-        # Add logic to handle queue invitation acceptance
-        pass
-    
-    elif notification.type == NotificationType.SERVICE_INVITE:
-        if not notification.service_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid service invitation"
-            )
-        # Add user to service
-        service = crud_service.get_service(db=db, service_id=notification.service_id)
-        if not service:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Service not found"
-            )
-        # Add logic to handle service invitation acceptance
-        pass
+    # Create membership
+    membership = crud_membership.create_membership(
+        db=db,
+        organization_id=notification.organization_id,
+        user_id=current_user.id,
+        role=role
+    )
     
     # Update notification status
-    return crud_notification.update_notification(
-        db=db,
-        notification_id=notification_id,
-        notification_update=NotificationUpdate(
-            status=NotificationStatus.ACCEPTED,
-            read_at=datetime.utcnow()
-        )
+    notification_update = NotificationUpdate(
+        status=NotificationStatus.ACCEPTED,
+        read_at=datetime.utcnow()
     )
+    return crud_notification.update_notification(db=db, notification_id=notification_id, notification_update=notification_update)
 
 @router.post("/{notification_id}/reject", response_model=NotificationRead)
-def reject_invitation(
+async def reject_invitation(
     notification_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Reject an invitation notification.
+    Reject an organization invitation.
     """
     notification = crud_notification.get_notification(db=db, notification_id=notification_id)
     if not notification:
@@ -179,17 +196,21 @@ def reject_invitation(
             detail="Not authorized to access this notification"
         )
     
+    if notification.type != NotificationType.ORGANIZATION_INVITE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This notification is not an organization invitation"
+        )
+    
     if notification.status != NotificationStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Notification is not in a pending state"
+            detail="This invitation has already been processed"
         )
     
-    return crud_notification.update_notification(
-        db=db,
-        notification_id=notification_id,
-        notification_update=NotificationUpdate(
-            status=NotificationStatus.REJECTED,
-            read_at=datetime.utcnow()
-        )
-    ) 
+    # Update notification status
+    notification_update = NotificationUpdate(
+        status=NotificationStatus.REJECTED,
+        read_at=datetime.utcnow()
+    )
+    return crud_notification.update_notification(db=db, notification_id=notification_id, notification_update=notification_update) 

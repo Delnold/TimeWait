@@ -14,7 +14,10 @@ import {
     InputLabel, 
     FormControl, 
     Alert,
-    Box
+    Box,
+    Switch,
+    FormControlLabel,
+    Typography
 } from '@mui/material';
 import UserSelect from '../Users/UserSelect';
 
@@ -25,6 +28,7 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
     const [role, setRole] = useState('user');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [sendInvite, setSendInvite] = useState(true);
 
     const handleAdd = async () => {
         if (!selectedUser) {
@@ -35,18 +39,31 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
         setError('');
         setLoading(true);
         try {
-            await axios.post(`/organizations/${organizationId}/memberships/`, {
-                user_id: selectedUser.id,
-                role,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${authToken}`,
-                },
-            });
-            setOpen(false);
-            setSelectedUser(null);
-            setRole('user');
-            refreshOrganization();
+            if (sendInvite) {
+                // Send invitation notification
+                await axios.post(`/notifications/`, {
+                    type: 'ORGANIZATION_INVITE',
+                    user_id: selectedUser.id,
+                    title: 'Organization Invitation',
+                    message: `You have been invited to join an organization as ${role}`,
+                    organization_id: organizationId,
+                    extra_data: JSON.stringify({ role })
+                });
+                setOpen(false);
+                setSelectedUser(null);
+                setRole('user');
+                refreshOrganization();
+            } else {
+                // Add member directly
+                await axios.post(`/organizations/${organizationId}/memberships/`, {
+                    user_id: selectedUser.id,
+                    role,
+                });
+                setOpen(false);
+                setSelectedUser(null);
+                setRole('user');
+                refreshOrganization();
+            }
         } catch (err) {
             console.error('Error adding member:', err);
             setError(err.response?.data.detail || 'Failed to add member');
@@ -78,7 +95,7 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
                             label="Select User"
                         />
                     </Box>
-                    <FormControl fullWidth>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
                         <InputLabel id="role-label">Role</InputLabel>
                         <Select
                             labelId="role-label"
@@ -91,6 +108,20 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
                             <MenuItem value="user">User</MenuItem>
                         </Select>
                     </FormControl>
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={sendInvite}
+                                onChange={(e) => setSendInvite(e.target.checked)}
+                                color="primary"
+                            />
+                        }
+                        label={
+                            <Typography variant="body2">
+                                Send invitation instead of adding directly
+                            </Typography>
+                        }
+                    />
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} disabled={loading}>
@@ -102,7 +133,7 @@ const AddMember = ({ organizationId, refreshOrganization }) => {
                         color="primary"
                         disabled={loading || !selectedUser}
                     >
-                        {loading ? 'Adding...' : 'Add Member'}
+                        {loading ? 'Adding...' : (sendInvite ? 'Send Invite' : 'Add Member')}
                     </Button>
                 </DialogActions>
             </Dialog>

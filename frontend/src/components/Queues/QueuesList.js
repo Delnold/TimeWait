@@ -7,6 +7,7 @@ import { List, ListItem, ListItemText, Paper, Chip, Stack, Button, Typography, B
 import { Link, useNavigate } from 'react-router-dom';
 import { Edit, Delete } from '@mui/icons-material';
 import JoinQueue from './JoinQueue';
+import NotificationsMenu from '../Notifications/NotificationsMenu';
 
 const QueuesList = () => {
     const { authToken, user } = useContext(AuthContext);
@@ -92,111 +93,114 @@ const QueuesList = () => {
     );
 
     return (
-        <Paper elevation={3} sx={{ maxHeight: 400, overflow: 'auto', p: 2 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Queues</Typography>
-                <Box>
-                    <Button 
-                        variant="outlined" 
-                        color="primary" 
-                        onClick={() => setTokenDialogOpen(true)}
-                        sx={{ mr: 1 }}
-                    >
-                        Join with Token
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        component={Link} 
-                        to="/queues/create"
-                    >
-                        Create Queue
-                    </Button>
+        <Box>
+            <NotificationsMenu />
+            <Paper elevation={3} sx={{ maxHeight: 400, overflow: 'auto', p: 2 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="h6">Queues</Typography>
+                    <Box>
+                        <Button 
+                            variant="outlined" 
+                            color="primary" 
+                            onClick={() => setTokenDialogOpen(true)}
+                            sx={{ mr: 1 }}
+                        >
+                            Join with Token
+                        </Button>
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            component={Link} 
+                            to="/queues/create"
+                        >
+                            Create Queue
+                        </Button>
+                    </Box>
                 </Box>
-            </Box>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            <List>
-                {visibleQueues.map(queue => (
-                    <ListItem 
-                        key={queue.id} 
-                        divider
-                        sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between',
-                            textDecoration: 'none', 
-                            color: 'inherit'
-                        }}
-                    >
-                        <Box component={Link} to={`/queues/${queue.id}`} sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}>
-                            <ListItemText
-                                primary={queue.name}
-                                secondary={`Type: ${queue.queue_type} | Status: ${queue.status}`}
-                            />
-                        </Box>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            {queue.queue_type !== 'TOKEN_BASED' && (
-                                <JoinQueue queueId={queue.id} />
-                            )}
-                            <Chip 
-                                label={queue.status} 
-                                color={
-                                    queue.status === 'OPEN' ? 'success' :
-                                    queue.status === 'PAUSED' ? 'warning' :
-                                    'error'
-                                } 
-                            />
-                            {(canManage || queue.user_id === user?.id) && (
-                                <>
-                                    <IconButton 
-                                        component={Link} 
-                                        to={`/queues/update/${queue.id}`} 
-                                        color="primary"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <Edit />
-                                    </IconButton>
-                                    <IconButton 
-                                        onClick={(e) => handleDelete(queue.id, e)} 
-                                        color="error"
-                                    >
-                                        <Delete />
-                                    </IconButton>
-                                </>
-                            )}
-                        </Stack>
-                    </ListItem>
-                ))}
-                {visibleQueues.length === 0 && (
-                    <ListItem>
-                        <ListItemText primary="No queues found." />
-                    </ListItem>
-                )}
-            </List>
+                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                <List>
+                    {visibleQueues.map(queue => (
+                        <ListItem 
+                            key={queue.id} 
+                            divider
+                            sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between',
+                                textDecoration: 'none', 
+                                color: 'inherit'
+                            }}
+                        >
+                            <Box component={Link} to={`/queues/${queue.id}`} sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}>
+                                <ListItemText
+                                    primary={queue.name}
+                                    secondary={`Type: ${queue.queue_type} | Status: ${queue.status}`}
+                                />
+                            </Box>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {queue.queue_type !== 'TOKEN_BASED' && (
+                                    <JoinQueue queueId={queue.id} />
+                                )}
+                                <Chip 
+                                    label={queue.status} 
+                                    color={
+                                        queue.status === 'OPEN' ? 'success' :
+                                        queue.status === 'PAUSED' ? 'warning' :
+                                        'error'
+                                    } 
+                                />
+                                {(canManage || queue.user_id === user?.id) && (
+                                    <>
+                                        <IconButton 
+                                            component={Link} 
+                                            to={`/queues/update/${queue.id}`} 
+                                            color="primary"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <Edit />
+                                        </IconButton>
+                                        <IconButton 
+                                            onClick={(e) => handleDelete(queue.id, e)} 
+                                            color="error"
+                                        >
+                                            <Delete />
+                                        </IconButton>
+                                    </>
+                                )}
+                            </Stack>
+                        </ListItem>
+                    ))}
+                    {visibleQueues.length === 0 && (
+                        <ListItem>
+                            <ListItemText primary="No queues found." />
+                        </ListItem>
+                    )}
+                </List>
 
-            <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)}>
-                <DialogTitle>Enter Access Token</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Access Token"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        value={accessToken}
-                        onChange={(e) => setAccessToken(e.target.value)}
-                        error={!!error}
-                        helperText={error}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setTokenDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleTokenSubmit} variant="contained" color="primary">
-                        Join Queue
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Paper>
+                <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)}>
+                    <DialogTitle>Enter Access Token</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Access Token"
+                            type="text"
+                            fullWidth
+                            variant="outlined"
+                            value={accessToken}
+                            onChange={(e) => setAccessToken(e.target.value)}
+                            error={!!error}
+                            helperText={error}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setTokenDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleTokenSubmit} variant="contained" color="primary">
+                            Join Queue
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </Paper>
+        </Box>
     );
 };
 

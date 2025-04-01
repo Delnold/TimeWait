@@ -20,6 +20,7 @@ import OrganizationsList from "./components/Organizations/OrganizationsList";
 import DashboardPage from "./components/DashboardPage";
 import QueueDetailWrapper from './components/Queues/QueueDetailWrapper';
 import QueueAdmin from "./components/Queues/QueueAdmin"; // NEW: Import QueueDetailWrapper
+import NotificationsMenu from './components/Notifications/NotificationsMenu';
 
 const App = () => {
     const { authToken, logoutUser, user } = useContext(AuthContext); // Access AuthContext
@@ -42,7 +43,7 @@ const App = () => {
                         TimeWait
                     </Typography>
                     {authToken ? (
-                        <Box>
+                        <Box display="flex" alignItems="center">
                             <Button color="inherit" component={Link} to="/services">
                                 Services
                             </Button>
@@ -52,7 +53,7 @@ const App = () => {
                             <Button color="inherit" component={Link} to="/organizations">
                                 Organizations
                             </Button>
-                            {/* Add more buttons if needed */}
+                            <NotificationsMenu />
                             <Button color="inherit" onClick={logoutUser}>
                                 Logout
                             </Button>
