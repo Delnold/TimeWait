@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import secrets
 from ..dependencies import get_db
@@ -20,6 +20,19 @@ router = APIRouter(
     prefix="/notifications",
     tags=["notifications"]
 )
+
+# Constants
+INVITE_EXPIRATION_HOURS = 24
+
+def is_invitation_expired(notification) -> bool:
+    """
+    Check if an invitation has expired based on its creation time.
+    """
+    if not notification.created_at:
+        return True
+    
+    expiration_time = notification.created_at + timedelta(hours=INVITE_EXPIRATION_HOURS)
+    return datetime.utcnow() > expiration_time
 
 @router.post("/", response_model=NotificationRead)
 async def create_notification(
@@ -261,6 +274,11 @@ async def verify_invite_token(
         try:
             extra_data = json.loads(notification.extra_data or '{}')
             if extra_data.get('invite_token') == token:
+                if is_invitation_expired(notification):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invitation has expired"
+                    )
                 return notification
         except json.JSONDecodeError:
             continue
@@ -299,6 +317,13 @@ async def accept_invite_by_token(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Invalid or expired invitation token"
+        )
+    
+    # Check if invitation has expired
+    if is_invitation_expired(notification):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation has expired"
         )
     
     # Get the role from extra_data
