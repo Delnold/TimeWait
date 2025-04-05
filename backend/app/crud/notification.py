@@ -103,4 +103,19 @@ def get_unread_count(db: Session, user_id: int) -> int:
             models.Notification.user_id == user_id,
             models.Notification.status == models.NotificationStatus.PENDING
         )
-    ).count() 
+    ).count()
+
+def get_notifications_by_type(
+    db: Session,
+    type: models.NotificationType,
+    status: Optional[models.NotificationStatus] = None
+) -> List[models.Notification]:
+    """
+    Get notifications by type and optionally by status.
+    """
+    query = db.query(models.Notification).filter(models.Notification.type == type)
+    
+    if status:
+        query = query.filter(models.Notification.status == status)
+    
+    return query.order_by(models.Notification.created_at.desc()).all() 

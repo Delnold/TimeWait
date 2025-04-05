@@ -31,7 +31,7 @@ async def send_organization_invite_email(
         template_body={
             "organization_name": organization_name,
             "role": role,
-            "invite_link": f"{settings.FRONTEND_URL}/invite/accept?token={invite_token}"
+            "invite_link": f"{settings.FRONTEND_URL}/invite/accept/{invite_token}"
         },
         subtype="html"
     )

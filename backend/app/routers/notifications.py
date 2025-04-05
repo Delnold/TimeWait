@@ -1,20 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timedelta
 import json
 import secrets
-from ..dependencies import get_db
+from fastapi.responses import RedirectResponse
+from ..dependencies import get_db, get_current_user_optional
 from ..models.notification import NotificationStatus, NotificationType
 from ..schemas.notification import NotificationRead, NotificationCreate, NotificationUpdate
-from ..crud import notification as crud_notification, get_user
+from ..crud import notification as crud_notification, get_user, get_user_by_email
 from ..crud import organization as crud_organization
 from ..crud import queue as crud_queue
 from ..crud import service as crud_service
 from ..crud import membership as crud_membership
+from ..crud import user as crud_user
 from ..dependencies import get_current_user
 from ..models.user import User, UserRole
 from ..utils.email import send_organization_invite_email
+from ..core.config import settings
 
 router = APIRouter(
     prefix="/notifications",
@@ -258,10 +261,12 @@ async def reject_invitation(
 @router.post("/invite/verify/{token}", response_model=NotificationRead)
 async def verify_invite_token(
     token: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """
     Verify an invitation token and return the associated notification.
+    Also handles the case where user is not authenticated.
     """
     # Find notification with matching token
     notifications = crud_notification.get_notifications_by_type(
@@ -270,6 +275,7 @@ async def verify_invite_token(
         status=NotificationStatus.PENDING
     )
     
+    target_notification = None
     for notification in notifications:
         try:
             extra_data = json.loads(notification.extra_data or '{}')
@@ -279,19 +285,67 @@ async def verify_invite_token(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Invitation has expired"
                     )
-                return notification
+                target_notification = notification
+                break
         except json.JSONDecodeError:
             continue
     
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Invalid or expired invitation token"
-    )
+    if not target_notification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid or expired invitation token"
+        )
 
-@router.post("/invite/accept/{token}", response_model=NotificationRead)
+    # Get target user's email
+    target_user = get_user(db, user_id=target_notification.user_id)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target user not found"
+        )
+
+    # Get entity details based on notification type
+    entity_info = {}
+    try:
+        extra_data = json.loads(target_notification.extra_data or '{}')
+        if target_notification.type == NotificationType.ORGANIZATION_INVITE:
+            org = crud_organization.get_organization(db, organization_id=target_notification.organization_id)
+            if org:
+                entity_info = {
+                    "entity_type": "organization",
+                    "entity_id": org.id,
+                    "entity_name": org.name,
+                    "role": extra_data.get('role', 'user')
+                }
+    except Exception:
+        pass
+
+    # If user is not authenticated, return notification with target email and entity info
+    if not current_user:
+        return {
+            **target_notification.__dict__,
+            "target_email": target_user.email,
+            "requires_auth": True,
+            "entity_info": entity_info
+        }
+    
+    # If user is authenticated but email doesn't match
+    if current_user.email != target_user.email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This invitation was sent to a different email address"
+        )
+
+    return {
+        **target_notification.__dict__,
+        "entity_info": entity_info
+    }
+
+@router.post("/invite/accept/{token}")
 async def accept_invite_by_token(
     token: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Accept an invitation using a token.
@@ -325,6 +379,21 @@ async def accept_invite_by_token(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invitation has expired"
         )
+
+    # Get target user
+    target_user = get_user(db, user_id=notification.user_id)
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target user not found"
+        )
+
+    # Verify that the current user matches the target user
+    if current_user.email != target_user.email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This invitation was sent to a different email address"
+        )
     
     # Get the role from extra_data
     try:
@@ -338,7 +407,7 @@ async def accept_invite_by_token(
     membership = crud_membership.create_membership(
         db=db,
         organization_id=notification.organization_id,
-        user_id=notification.user_id,
+        user_id=current_user.id,
         role=role
     )
     
@@ -347,4 +416,14 @@ async def accept_invite_by_token(
         status=NotificationStatus.ACCEPTED,
         read_at=datetime.utcnow()
     )
-    return crud_notification.update_notification(db=db, notification_id=notification.id, notification_update=notification_update) 
+    updated_notification = crud_notification.update_notification(
+        db=db, 
+        notification_id=notification.id, 
+        notification_update=notification_update
+    )
+
+    # Return the updated notification with organization info
+    return {
+        **updated_notification.__dict__,
+        "organization_id": notification.organization_id
+    } 

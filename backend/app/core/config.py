@@ -6,6 +6,8 @@ import os
 class Settings(BaseSettings):
     # Database settings
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://youruser:yourpassword@db:5432/queuetracker")
+    DATABASE_URL_POSTGRES: str = os.getenv("DATABASE_URL_POSTGRES", "postgresql://youruser:yourpassword@db:5432/queuetracker")
+    DATABASE_URL_POSTGRES_ALEMBIC: str = os.getenv("DATABASE_URL_POSTGRES_ALEMBIC", "postgresql://youruser:yourpassword@localhost:5432/queuetracker")
     
     # JWT settings
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your_secret_key")
@@ -19,6 +21,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "19d5fb589cb3cd")
     SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL", "noreply@timewait.com")
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "TimeWait")
+    EMAIL_ENABLED: bool = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     
     class Config:

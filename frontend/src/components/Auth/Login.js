@@ -1,18 +1,28 @@
 // src/components/Auth/Login.js
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { TextField, Button, Container, Typography, Box, Alert } from '@mui/material';
 
 const Login = () => {
     const { loginUser } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
     const [error, setError] = useState('');
+
+    // Get redirect path and email from location state
+    const redirectPath = location.state?.redirectAfterAuth || '/services';
+    const prefilledEmail = location.state?.email || '';
+
+    useEffect(() => {
+        if (prefilledEmail) {
+            setEmail(prefilledEmail);
+        }
+    }, [prefilledEmail]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -20,7 +30,7 @@ const Login = () => {
 
         const result = await loginUser(email, password);
         if (result.success) {
-            navigate('/services');
+            navigate(redirectPath);
         } else {
             setError(result.message);
         }

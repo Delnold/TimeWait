@@ -1,10 +1,19 @@
 // src/contexts/AuthContext.js
 
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode'; // Named import for version 4.x
 import axios from '../utils/axios';
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
+
+// Custom hook to use the auth context
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};
 
 export const AuthProvider = ({ children }) => {
     const [authToken, setAuthToken] = useState(() => localStorage.getItem('authToken'));
@@ -77,6 +86,7 @@ export const AuthProvider = ({ children }) => {
         loginUser,
         registerUser,
         logoutUser,
+        isAuthenticated: !!authToken,
     };
 
     return (
