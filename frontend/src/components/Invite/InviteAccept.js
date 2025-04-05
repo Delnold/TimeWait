@@ -41,11 +41,11 @@ const InviteAccept = () => {
                 throw new Error('Invalid response from server');
             }
 
-            // Check if authentication is required
-            if (response.data.requires_auth && !isAuthenticated) {
-                console.log('Authentication required, redirecting to login');
+            // Always check authentication first
+            if (!isAuthenticated) {
+                console.log('User not authenticated, redirecting to login');
                 const currentPath = `/invite/accept/${token}`;
-                navigate('/auth/login', {
+                navigate('/login', {
                     state: {
                         email: response.data.target_email,
                         redirectAfterAuth: currentPath
@@ -56,7 +56,7 @@ const InviteAccept = () => {
             }
 
             // If user is authenticated but email doesn't match
-            if (isAuthenticated && user && user.email !== response.data.target_email) {
+            if (user && user.email !== response.data.target_email) {
                 setError('This invitation was sent to a different email address');
                 setLoading(false);
                 return;
