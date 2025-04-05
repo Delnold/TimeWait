@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="queuetracker@localhost" uuid="3eec6809-4b26-4cc6-9420-2ab5a77c0849">
+    <data-source source="LOCAL" name="PostgresSQL" uuid="45f9b004-eb25-45c9-9faa-4756682de1c9">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

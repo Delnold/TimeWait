@@ -9,8 +9,21 @@ services:
       dockerfile: Dockerfile
     container_name: queuetracker-backend
     restart: always
-    env_file:
-      - ./backend/.env
+    environment:
+      # Database settings
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/queuetracker
+      # Email settings
+      SMTP_HOST: sandbox.smtp.mailtrap.io
+      SMTP_PORT: 2525
+      SMTP_USER: e792af3d6ab993
+      SMTP_PASSWORD: 19d5fb589cb3cd
+      SMTP_FROM_EMAIL: noreply@timewait.com
+      SMTP_FROM_NAME: TimeWait
+      # JWT settings
+      SECRET_KEY: your_secret_key
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      FRONTEND_URL: http://localhost:3000
     ports:
       - "8000:8000"
     depends_on:
@@ -46,14 +59,16 @@ services:
     image: postgres:14
     container_name: queuetracker-db
     restart: always
-    env_file:
-      - .env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: queuetracker
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U youruser -d queuetracker"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d queuetracker"]
       interval: 5s
       timeout: 5s
       retries: 5

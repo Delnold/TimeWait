@@ -5,17 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-DB_TYPE = os.getenv("DB_TYPE", "sqlite")
+# We're using PostgreSQL in Docker
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://youruser:yourpassword@db:5432/queuetracker")
 
-if DB_TYPE == "postgres":
-    SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL_POSTGRES")
-else:
-    SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./queuetracker.db")
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False} if DB_TYPE != "postgres" else {}
-)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

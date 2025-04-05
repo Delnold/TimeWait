@@ -21,6 +21,7 @@ import DashboardPage from "./components/DashboardPage";
 import QueueDetailWrapper from './components/Queues/QueueDetailWrapper';
 import QueueAdmin from "./components/Queues/QueueAdmin"; // NEW: Import QueueDetailWrapper
 import NotificationsMenu from './components/Notifications/NotificationsMenu';
+import InviteAccept from './components/Invite/InviteAccept';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import getTheme from './theme';
@@ -213,6 +214,7 @@ const App = () => {
                         <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/invite/accept/:token" element={<InviteAccept />} />
 
                         {/* NEW: Queue Detail Route */}
                         <Route path="/queues/:queueId" element={<PrivateRoute><QueueDetailWrapper /></PrivateRoute>} />

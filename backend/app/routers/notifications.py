@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 import json
+import secrets
 from ..dependencies import get_db
 from ..models.notification import NotificationStatus, NotificationType
 from ..schemas.notification import NotificationRead, NotificationCreate, NotificationUpdate
@@ -13,6 +14,7 @@ from ..crud import service as crud_service
 from ..crud import membership as crud_membership
 from ..dependencies import get_current_user
 from ..models.user import User, UserRole
+from ..utils.email import send_organization_invite_email
 
 router = APIRouter(
     prefix="/notifications",
@@ -61,6 +63,31 @@ async def create_notification(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User is already a member of this organization"
             )
+        
+        # Generate invite token
+        invite_token = secrets.token_urlsafe(32)
+        
+        # Add invite token to extra_data
+        extra_data = json.loads(notification.extra_data or '{}')
+        extra_data['invite_token'] = invite_token
+        notification.extra_data = json.dumps(extra_data)
+        
+        # Create notification
+        db_notification = crud_notification.create_notification(db=db, notification=notification)
+        
+        # Send email invitation
+        try:
+            await send_organization_invite_email(
+                email_to=target_user.email,
+                organization_name=organization.name,
+                invite_token=invite_token,
+                role=extra_data.get('role', 'user')
+            )
+        except Exception as e:
+            # Log the error but don't fail the notification creation
+            print(f"Failed to send invitation email: {str(e)}")
+        
+        return db_notification
     
     return crud_notification.create_notification(db=db, notification=notification)
 
@@ -213,4 +240,86 @@ async def reject_invitation(
         status=NotificationStatus.REJECTED,
         read_at=datetime.utcnow()
     )
-    return crud_notification.update_notification(db=db, notification_id=notification_id, notification_update=notification_update) 
+    return crud_notification.update_notification(db=db, notification_id=notification_id, notification_update=notification_update)
+
+@router.post("/invite/verify/{token}", response_model=NotificationRead)
+async def verify_invite_token(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Verify an invitation token and return the associated notification.
+    """
+    # Find notification with matching token
+    notifications = crud_notification.get_notifications_by_type(
+        db=db,
+        type=NotificationType.ORGANIZATION_INVITE,
+        status=NotificationStatus.PENDING
+    )
+    
+    for notification in notifications:
+        try:
+            extra_data = json.loads(notification.extra_data or '{}')
+            if extra_data.get('invite_token') == token:
+                return notification
+        except json.JSONDecodeError:
+            continue
+    
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Invalid or expired invitation token"
+    )
+
+@router.post("/invite/accept/{token}", response_model=NotificationRead)
+async def accept_invite_by_token(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Accept an invitation using a token.
+    """
+    # Find notification with matching token
+    notifications = crud_notification.get_notifications_by_type(
+        db=db,
+        type=NotificationType.ORGANIZATION_INVITE,
+        status=NotificationStatus.PENDING
+    )
+    
+    notification = None
+    for n in notifications:
+        try:
+            extra_data = json.loads(n.extra_data or '{}')
+            if extra_data.get('invite_token') == token:
+                notification = n
+                break
+        except json.JSONDecodeError:
+            continue
+    
+    if not notification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid or expired invitation token"
+        )
+    
+    # Get the role from extra_data
+    try:
+        extra_data = json.loads(notification.extra_data or '{}')
+        role_str = extra_data.get('role', 'USER').upper()
+        role = UserRole[role_str]
+    except (json.JSONDecodeError, KeyError):
+        role = UserRole.USER
+    
+    # Create membership
+    membership = crud_membership.create_membership(
+        db=db,
+        organization_id=notification.organization_id,
+        user_id=notification.user_id,
+        role=role
+    )
+    
+    # Update notification status
+    notification_update = NotificationUpdate(
+        status=NotificationStatus.ACCEPTED,
+        read_at=datetime.utcnow()
+    )
+    return crud_notification.update_notification(db=db, notification_id=notification.id, notification_update=notification_update) 

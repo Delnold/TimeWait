@@ -11,3 +11,6 @@ pydantic
 python-multipart
 pydantic[email]
 aiokafka
+fastapi-mail==1.4.1
+jinja2==3.1.2
+pydantic-settings==2.1.0
