@@ -13,10 +13,10 @@ services:
       # Database settings
       DATABASE_URL: postgresql://postgres:postgres@db:5432/queuetracker
       # Email settings
-      SMTP_HOST: sandbox.smtp.mailtrap.io
-      SMTP_PORT: 2525
-      SMTP_USER: e792af3d6ab993
-      SMTP_PASSWORD: 19d5fb589cb3cd
+      SMTP_HOST: 
+      SMTP_PORT: 
+      SMTP_USER: 
+      SMTP_PASSWORD: 
       SMTP_FROM_EMAIL: noreply@timewait.com
       SMTP_FROM_NAME: TimeWait
       # JWT settings
